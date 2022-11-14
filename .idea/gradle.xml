@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <option name="delegatedBuild" value="false" />
+        <option name="testRunner" value="PLATFORM" />
         <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleHome" value="$USER_HOME$/tools/gradle-6.0" />
@@ -20,6 +23,7 @@
             <option value="$PROJECT_DIR$/spring-context-support" />
             <option value="$PROJECT_DIR$/spring-core" />
             <option value="$PROJECT_DIR$/spring-expression" />
+            <option value="$PROJECT_DIR$/spring-hao-test" />
             <option value="$PROJECT_DIR$/spring-instrument" />
             <option value="$PROJECT_DIR$/spring-jcl" />
             <option value="$PROJECT_DIR$/spring-jdbc" />

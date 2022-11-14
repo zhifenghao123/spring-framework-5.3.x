@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hao.mapper.CountryMapper">
+	<resultMap id="CountryMap" type="com.hao.entity.Country">
+		<id column="country_id" jdbcType="INTEGER" property="countryId"></id>
+		<result column="country_name" jdbcType="VARCHAR" property="countryName"></result>
+	</resultMap>
+	<insert id="saveCountry" parameterType="com.hao.entity.Country">
+		insert into country(country_id,country_name) values(#{countryId},#{countryName})
+	</insert>
+	<select id="getCountryById" resultType="com.hao.entity.Country" parameterType="java.lang.Integer">
+		select * from country where country_id = #{country_id}
+	</select>
+	<select id="getAllCountrys" resultMap="CountryMap">
+		select * from country
+	</select>
+</mapper>
