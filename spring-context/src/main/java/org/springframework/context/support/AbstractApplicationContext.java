@@ -543,45 +543,97 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
+		// 使用synchronized是为了避免refresh() 还没结束，再次发起启动或者销毁容器引起的冲突
 		synchronized (this.startupShutdownMonitor) {
 			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
 
+			// 做一些准备工作，记录容器的启动时间、标记“已启动”状态、初始化属性配置文件、检验必须属性以及监听器
 			// Prepare this context for refreshing.
 			prepareRefresh();
 
+			// 初始化BeanFactory容器、注册BeanDefinition, 最终获得了DefaultListableBeanFactory，给beanFactory设置序列化id
 			// Tell the subclass to refresh the internal bean factory.
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
+			/*
+				向beanFactory中注册了两个BeanPostProcessor,以及三个和环境相关的bean
+			  	这两个后置处理器为ApplicationContextAwareProcessor和ApplicationListenerDetector
+			 	前一个后置处理是为实现了ApplicationContextAware接口的类，回调setApplicationContext()方法，
+			 	后一个处理器时用来检测ApplicationListener类的，当某个Bean实现了ApplicationListener接口的bean被创建好后，会被加入到监听器列表中
+			*/
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
 			try {
+				// Spring的一个扩展点. 如果有Bean实现了BeanFactoryPostProcessor接口，
+				// 那么在容器初始化以后，Spring 会负责调用里面的 postProcessBeanFactory 方法。
+				// 具体的子类可以在这步的时候添加特殊的 BeanFactoryPostProcessor 的实现类，来做些事
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
+
+				// 调用BeanFactoryPostProcessor各个实现类的postProcessBeanFactory(factory) 方法
+				/*
+					执行所有的BeanFactoryPostProcessor，包括自定义的，以及spring内置的。
+					默认情况下，容器中只有一个BeanFactoryPostProcessor,即：Spring内置的，ConfigurationClassPostProcessor(这个类很重要)
+					会先执行实现了BeanDefinitionRegistryPostProcessor接口的类，然后执行BeanFactoryPostProcessor的类
+					ConfigurationClassPostProcessor类的postProcessorBeanFactory()方法进行了@Configuration类的解析，@ComponentScan的扫描，以及@Import注解的处理
+					经过这一步以后,会将所有交由spring管理的bean所对应的BeanDefinition放入到beanFactory的beanDefinitionMap中
+					同时ConfigurationClassPostProcessor类的postProcessorBeanFactory()方法执行完后，向容器中添加了一个后置处理器————ImportAwareBeanPostProcessor
+				 */
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
+				// 扩展点,注册 BeanPostProcessor 的实现类，注意不是BeanFactoryPostProcessor
+				/*
+					注册所有的BeanPostProcessor，因为在方法里面调用了getBean()方法，所以在这一步，实际上已经将所有的BeanPostProcessor实例化了
+					为什么要在这一步就将BeanPostProcessor实例化呢？
+					因为后面要实例化bean，而BeanPostProcessor是用来干预bean的创建过程的，所以必须在bean实例化之前就实例化所有的BeanPostProcessor(包括开发人员自己定义的)
+					最后再重新注册了ApplicationListenerDetector，这样做的目的是为了将ApplicationListenerDetector放入到后置处理器的最末端
+				 */
 				// Register bean processors that intercept bean creation.
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
+				// 初始化当前 ApplicationContext 的 MessageSource，用在国际化操作中
 				// Initialize message source for this context.
 				initMessageSource();
 
+				/*
+					初始化事件广播器，如果容器中存在了名字为applicationEventMulticaster的广播器，则使用该广播器
+					如果没有，则初始化一个SimpleApplicationEventMulticaster
+					事件广播器的用途是，发布事件，并且为所发布的时间找到对应的事件监听器。
+				 */
 				// Initialize event multicaster for this context.
 				initApplicationEventMulticaster();
 
+				// 这也是spring的一个扩展点
+				/*
+					执行其他的初始化操作，例如和SpringMVC整合时，需要初始化一些其他的bean，但是对于纯spring工程来说，onFresh方法是一个空方法
+				 */
 				// Initialize other special beans in specific context subclasses.
 				onRefresh();
 
+				/*
+					这一步会将自定义的listener的bean名称放入到事件广播器中
+					同时还会将早期的ApplicationEvent发布(对于单独的spring工程来说，在此时不会有任何ApplicationEvent发布，
+					但是和springMVC整合时，springMVC会执行onRefresh()方法，在这里会发布事件)
+				 */
 				// Check for listener beans and register them.
 				registerListeners();
 
+				/*
+					实例化剩余的非懒加载的单例bean(注意：剩余、非懒加载、单例)
+					为什么说是剩余呢？
+					如果开发人员自定义了BeanPosrProcessor，而BeanPostProcessor在前面已经实例化了，所以在这里不会再实例化，因此这里使用剩余一词
+				 */
 				// Instantiate all remaining (non-lazy-init) singletons.
 				finishBeanFactoryInitialization(beanFactory);
 
+				/*
+					结束refresh，主要干了一件事，就是发布一个事件ContextRefreshEvent，通知大家spring容器refresh结束了。
+				 */
 				// Last step: publish corresponding event.
 				finishRefresh();
 			}
@@ -592,6 +644,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 							"cancelling refresh attempt: " + ex);
 				}
 
+				/*
+					出异常后销毁bean
+				 */
 				// Destroy already created singletons to avoid dangling resources.
 				destroyBeans();
 
@@ -603,6 +658,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 
 			finally {
+				/*
+					在bean的实例化过程中，会缓存很多信息，例如bean的注解信息，但是当单例bean实例化完成后，这些缓存信息已经不会再使用了，所以可以释放这些内存资源了
+				 */
 				// Reset common introspection caches in Spring's core, since we
 				// might not ever need metadata for singleton beans anymore...
 				resetCommonCaches();
@@ -662,6 +720,15 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 该方法会解析所有 Spring 配置文件（通常我们会放在 resources 目录下），将所有 Spring 配置文件中的 bean 定义封装成 BeanDefinition，加载到 BeanFactory 中。
+	 * 	常见的，如果解析到<context:component-scan base-package="" /> 注解时，会扫描 base-package指定的目录，
+	 * 	将该目录下使用指定注解（@Controller、@Service、@Component、@Repository）的 bean 定义也同样封装成 BeanDefinition，加载到 BeanFactory 中。
+	 *
+	 * 	上面提到的 “加载到 BeanFactory 中” 的内容主要指的是添加到以下3个缓存：
+	 * 	beanDefinitionNames缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 集合。
+	 * 	beanDefinitionMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和 BeanDefinition 映射。
+	 * 	aliasMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和别名映射。
+	 *
 	 * Tell the subclass to refresh the internal bean factory.
 	 * @return the fresh BeanFactory instance
 	 * @see #refreshBeanFactory()

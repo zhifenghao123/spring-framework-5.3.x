@@ -65,6 +65,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		// 此处会先调用父类的构造器GenericApplicationContext()，即先执行 super(),会初始化DefaultListableBeanFactory
+		// 初始化了bean的读取器，并向spring中注册了7个spring自带的类，这里的注册指的是将这7个类对应的BeanDefinition放入到到BeanDefinitionMap中
 		StartupStep createAnnotatedBeanDefReader = this.getApplicationStartup().start("spring.context.annotated-bean-reader.create");
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		createAnnotatedBeanDefReader.end();
@@ -88,8 +90,18 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+
+		// 在this()中通过调用父类GenericApplicationContext构造器初始化了BeanFactory，以及向容器中注册了7个后置处理器
+		/*
+		 会初始化一个BeanFactory,为默认的DefaultListableBeanFactory
+		 会初始化一个beanDefinition的读取器reader；同时向容器中注册了7个spring的后置处理器(包括BeanPostProcessor和BeanFactoryPostProcessor)
+		 会初始化一个扫描器，后面似乎并没有用到这个扫描器这个scanner，在refresh()中使用的是重新new的一个扫描器。
+		 */
 		this();
+		//对传入的包进行扫描，扫描完成后，会得到一个 BeanDefinition 的集合
 		register(componentClasses);
+		//启动spring，在这里完成spring容器的初始化操作，
+		//包括bean的实例化、属性注入，将bean保存到spring容器中等
 		refresh();
 	}
 
