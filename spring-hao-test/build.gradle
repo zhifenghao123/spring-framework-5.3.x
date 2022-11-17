@@ -5,8 +5,6 @@ plugins {
 group 'org.springframework'
 version '5.3.24-SNAPSHOT'
 
-sourceCompatibility = 1.8
-
 
 repositories {
     mavenCentral()
@@ -16,6 +14,7 @@ dependencies {
     api(project(":spring-context"))
     api(project(":spring-aop"))
     api(project(":spring-aspects"))
+    api(project(":spring-instrument"))
     api(project(":spring-jdbc"))
     api 'org.aspectj:aspectjrt:1.9.7'
     api 'org.aspectj:aspectjweaver:1.9.7'
@@ -25,7 +24,8 @@ dependencies {
 // https://mvnrepository.com/artifact/mysql/mysql-connector-java
     api group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
 
-    // http://mybatis.org/spring/
+    // https://mybatis.org/spring/
     api group: 'org.mybatis',name: 'mybatis',version: '3.5.0'
     api group: 'org.mybatis',name: 'mybatis-spring',version: '2.0.0'
+    api 'javax.annotation:javax.annotation-api:1.3.2'
 }
