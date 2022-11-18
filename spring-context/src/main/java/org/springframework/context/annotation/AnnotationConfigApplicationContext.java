@@ -66,10 +66,12 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public AnnotationConfigApplicationContext() {
 		// 此处会先调用父类的构造器GenericApplicationContext()，即先执行 super(),会初始化DefaultListableBeanFactory
-		// 初始化了bean的读取器，并向spring中注册了7个spring自带的类，这里的注册指的是将这7个类对应的BeanDefinition放入到到BeanDefinitionMap中
 		StartupStep createAnnotatedBeanDefReader = this.getApplicationStartup().start("spring.context.annotated-bean-reader.create");
+		// reader最主要的目的是用于辅助注册BeanDefinition
+		// 在这里初始化了bean的读取器，并向spring中注册了7个spring自带的类，这里的注册指的是将这7个类对应的BeanDefinition放入到到BeanDefinitionMap中，并还未成为真正的bean
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		createAnnotatedBeanDefReader.end();
+        // scanner最主要的目的就是扫描类路径下所有的class文件能否解析为bd
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
