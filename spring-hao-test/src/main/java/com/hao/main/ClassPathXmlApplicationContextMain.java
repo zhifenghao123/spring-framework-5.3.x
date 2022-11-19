@@ -12,7 +12,7 @@ import com.hao.mapper.CityMapper;
 import com.hao.service.CityService;
 import com.hao.service.CountryService;
 
-public class MainTest2 {
+public class ClassPathXmlApplicationContextMain {
 	public static void main(String[] args) {
 		ApplicationContext ac = new ClassPathXmlApplicationContext("applicationContext.xml");
 		CityService cityService = (CityService) ac.getBean("cityService");

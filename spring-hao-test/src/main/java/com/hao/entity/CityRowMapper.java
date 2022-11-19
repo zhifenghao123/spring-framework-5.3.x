@@ -1,5 +1,5 @@
 
-package com.hao.main;
+package com.hao.entity;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
