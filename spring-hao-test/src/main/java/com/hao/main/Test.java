@@ -1,10 +1,10 @@
 package com.hao.main;
 
 /**
- * TEST class
+ * Test class
  *
  * @author haozhifeng
  * @date 2022/01/15
  */
-public class TEST {
+public class Test {
 }

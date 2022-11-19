@@ -7,7 +7,7 @@ import com.hao.config.AppConfig;
 import com.hao.service.BaseService;
 import com.hao.service.UserService;
 
-public class MainTest {
+public class AnnotationConfigApplicationContextMain {
 
 	public static void main(String[] args) {
 		AnnotationConfigApplicationContext annotationConfigApplicationContext =

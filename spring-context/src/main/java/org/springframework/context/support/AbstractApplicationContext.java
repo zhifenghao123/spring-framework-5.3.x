@@ -563,26 +563,46 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			 	后一个处理器时用来检测ApplicationListener类的，当某个Bean实现了ApplicationListener接口的bean被创建好后，会被加入到监听器列表中
 			*/
 			// Prepare the bean factory for use in this context.
+			// prepareBeanFactory()在整个容器启动过程中,第一次添加了后置处理器到列表中,第一次添加了单例bean到容器中.
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Spring的一个扩展点. 如果有Bean实现了BeanFactoryPostProcessor接口，
-				// 那么在容器初始化以后，Spring 会负责调用里面的 postProcessBeanFactory 方法。
+				// Spring的一个扩展点.
+				// Spring中并没有具体去实现postProcessBeanFactory方法，这是Spring预留给子类进行扩展使用的,是提供给想要实现BeanPostProcessor的三方框架使用的。模板方法设计模式。 谁要使用谁就去实现。
+				// 作用是在BeanFactory准备工作完成后做一些定制化的处理，一般结合BeanPostProcessor接口的实现类一起使用，
+				// 注入一些重要资源（类似Application的属性和ServletContext的属性）。最后需要设置忽略这类BeanPostProcessor子接口的自动装配。
+				// 如果有Bean实现了BeanFactoryPostProcessor接口，那么在容器初始化以后，Spring 会负责调用里面的 postProcessBeanFactory 方法。
 				// 具体的子类可以在这步的时候添加特殊的 BeanFactoryPostProcessor 的实现类，来做些事
+				// 而在SpringBoot中的AnnotationConfigServletWebServerApplicationContext#postProcessBeanFactory()是对这个方法进行了覆盖的：
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
 
-				// 调用BeanFactoryPostProcessor各个实现类的postProcessBeanFactory(factory) 方法
+				// 调用BeanFactoryPostProcessor所有实现类的postProcessBeanFactory(factory) 方法
 				/*
-					执行所有的BeanFactoryPostProcessor，包括自定义的，以及spring内置的。
-					默认情况下，容器中只有一个BeanFactoryPostProcessor,即：Spring内置的，ConfigurationClassPostProcessor(这个类很重要)
-					会先执行实现了BeanDefinitionRegistryPostProcessor接口的类，然后执行BeanFactoryPostProcessor的类
-					ConfigurationClassPostProcessor类的postProcessorBeanFactory()方法进行了@Configuration类的解析，@ComponentScan的扫描，以及@Import注解的处理
+					(1)执行所有的BeanFactoryPostProcessor，包括自定义的，以及spring内置的。
+					(2)默认情况下，容器中只有一个BeanFactoryPostProcessor,即：Spring内置的，ConfigurationClassPostProcessor(这个类很重要)
+					(3)会先执行实现了BeanDefinitionRegistryPostProcessor接口的类，然后执行实现了BeanFactoryPostProcessor接口的类
+					(4)ConfigurationClassPostProcessor类的postProcessorBeanFactory()方法进行了@Configuration类的解析，@ComponentScan的扫描，以及@Import注解的处理
 					经过这一步以后,会将所有交由spring管理的bean所对应的BeanDefinition放入到beanFactory的beanDefinitionMap中
 					同时ConfigurationClassPostProcessor类的postProcessorBeanFactory()方法执行完后，向容器中添加了一个后置处理器————ImportAwareBeanPostProcessor
 				 */
+				/*BeanFactoryPostProcessor是 Spring的很重要扩展点，能增强beanFactory的功能；
+				  关于BeanFactoryPostProcessor的学习整理：
+				(1)BeanFactoryPostProcessor：可以在加载解析BeanDefinition之后，可以对BeanDefinition进行修改；
+				   可以新增一些特殊的BeanPostProcessor，比如new Xxx(beanFactory)新增带有beanFactory的BeanPostProcessor；
+				(2)BeanDefinitionRegistryPostProcessor： BeanFactoryPostProcessor的子接口，用于解析注册BeanDefinition，
+				   所以它是先于BeanFactoryPostProcessor执行。实现类中ConfigurationClassPostProcessor很重要。
+				(3)ConfigurationClassPostProcessor： BeanFactoryPostProcessor的重要实现类，用于解析@Configuration标注的配置类，
+				   解析配置类上的注解，比如解析加载来自@ComponentScan扫描路径中的BeanDefinition、解析加载来自@ImportResource导入的配置文件中的BeanDefinition。
+				(4)BeanFactoryPostProcessor的执行顺序
+                   1)BeanFactoryPostProcessor与BeanDefinitionRegistryPostProcessor之间：
+                      先执行BeanDefinitionRegistryPostProcessor，后执行BeanFactoryPostProcessor
+                   2)同类型之间：同类之间如果需要按顺序执行，需要实现Ordered接口并实现getOrder方法返一个整数值，比较器根据此整数进行排序，数值越低优先级越高，反之越低，
+                   取值返回是Integer.MIN_VALUE ~ Integer.MAX_VALUE。也可以实现Ordered的子接口PriorityOrdered，逻辑同上。执行顺序为 implement PriorityOrdered、 implement Ordered、 其他
+				 */
+
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
@@ -755,13 +775,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
+		// 设置beanFactory的类加载器.
 		beanFactory.setBeanClassLoader(getClassLoader());
 		if (!shouldIgnoreSpel) {
+			// 设置beanFactory当中的表达式语言解析器. 比如@Value中的表达式就是这里设置的解析器来解析的.
 			beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		}
+		// 设置beanFactory当中的属性编辑器.比如在配置文件中配置了一个"2020-01-01"的日期类型字符串,
+		// 正常情况下,Spring无法解析为Date类型,因此可以通过自定义属性编辑器的方式来转换.这就是属性编辑器的作用.
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// 重要!!! 这里添加了一个ApplicationContextAwareProcessor到BeanFactory的BeanPostProcessors中.
+		// 注意,这里只是添加到后置处理列表,并没有将其解析为beanDefinition,更没有解析为bean注入到容器当中.具体解析时机,还在后面.
+		// 到这里, BeanFactory中的BeanPostProcessors中迎来了第1个后置处理器.(注意,并没有添加到BeanDefinitionMap中)
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -773,15 +800,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
+		// 这里提前注册已解析的依赖,目的是用于自动装配使用.
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
 		beanFactory.registerResolvableDependency(ApplicationContext.class, this);
 
 		// Register early post-processor for detecting inner beans as ApplicationListeners.
+		// BeanPostProcessors中迎来了第2个 processor
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
+		// 第一次进来显然不包含,因此不会进入if分支
 		if (!NativeDetector.inNativeImage() && beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			// Set a temporary ClassLoader for type matching.
@@ -789,15 +819,19 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Register default environment beans.
+		// 将environment实例注入到单例容器中, 到这里,容器迎来了第1个单例bean!
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
+		// 将systemProperties实例注入到单例容器中, 到这里,容器迎来了第2个单例bean!
 		if (!beanFactory.containsLocalBean(SYSTEM_PROPERTIES_BEAN_NAME)) {
 			beanFactory.registerSingleton(SYSTEM_PROPERTIES_BEAN_NAME, getEnvironment().getSystemProperties());
 		}
+		// 将systemEnvironment实例注入到单例容器中, 到这里,容器迎来了第4个单例!
 		if (!beanFactory.containsLocalBean(SYSTEM_ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(SYSTEM_ENVIRONMENT_BEAN_NAME, getEnvironment().getSystemEnvironment());
 		}
+		// 将applicationStartup实例注入到单例容器中, 到这里,容器迎来了第4个单例!
 		if (!beanFactory.containsLocalBean(APPLICATION_STARTUP_BEAN_NAME)) {
 			beanFactory.registerSingleton(APPLICATION_STARTUP_BEAN_NAME, getApplicationStartup());
 		}

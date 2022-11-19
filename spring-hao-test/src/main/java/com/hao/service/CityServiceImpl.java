@@ -9,7 +9,7 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.hao.entity.City;
-import com.hao.main.CityRowMapper;
+import com.hao.entity.CityRowMapper;
 
 
 public class CityServiceImpl implements CityService {

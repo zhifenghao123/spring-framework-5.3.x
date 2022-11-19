@@ -7,7 +7,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 
 
-public class TestMain3 {
+public class xmlBeanFactoryMain {
 	public static void main(String[] args) {
 		@SuppressWarnings({"unchecked", "deprecation"})
 		BeanFactory xmlBeanFactory = new org.springframework.beans.factory.xml.XmlBeanFactory(new ClassPathResource("beanFactoryTest.xml"));
