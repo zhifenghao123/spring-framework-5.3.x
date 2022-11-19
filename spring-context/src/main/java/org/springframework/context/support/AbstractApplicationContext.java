@@ -567,9 +567,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Spring的一个扩展点. 如果有Bean实现了BeanFactoryPostProcessor接口，
-				// 那么在容器初始化以后，Spring 会负责调用里面的 postProcessBeanFactory 方法。
+				// Spring的一个扩展点.
+				// Spring中并没有具体去实现postProcessBeanFactory方法，这是Spring预留给子类进行扩展使用的,是提供给想要实现BeanPostProcessor的三方框架使用的。模板方法设计模式。 谁要使用谁就去实现。
+				// 作用是在BeanFactory准备工作完成后做一些定制化的处理，一般结合BeanPostProcessor接口的实现类一起使用，
+				// 注入一些重要资源（类似Application的属性和ServletContext的属性）。最后需要设置忽略这类BeanPostProcessor子接口的自动装配。
+				// 如果有Bean实现了BeanFactoryPostProcessor接口，那么在容器初始化以后，Spring 会负责调用里面的 postProcessBeanFactory 方法。
 				// 具体的子类可以在这步的时候添加特殊的 BeanFactoryPostProcessor 的实现类，来做些事
+				// 而在SpringBoot中的AnnotationConfigServletWebServerApplicationContext#postProcessBeanFactory()是对这个方法进行了覆盖的：
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
