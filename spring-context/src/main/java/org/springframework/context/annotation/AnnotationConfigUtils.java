@@ -169,9 +169,12 @@ public abstract class AnnotationConfigUtils {
 		// 初始化一个bdh容器，用于盛放接下来将解析出来的后置处理器的bd。
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
 
+		// ******* spring默认的BeanDefinition的注册，很重要，需要理解每个bean的类型
 		// 容器在第一次初始化时，内部一个bd都没有的。
 		// 也就是说，从这里开始，容器将第一次装载bd，而这里的这些bd都是spring自带的后置处理器。
+
 		// 获取并注册ConfigurationClassPostProcessor后置处理器 的bd
+		// ConfigurationClassPostProcessor是一个工厂后置处理器，这个后置处理器非常重要，基本上类上面的注解都在这里面判断并解析，spring的包扫描也在里面完成，
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
 			def.setSource(source);
@@ -179,6 +182,7 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		// 获取并注册AutowiredAnnotationBeanPostProcessor后置处理器 的bd
+		// 处理@Autowired的，它是一个bean的后置处理器，在bean的属性注入的时候会用到处理@Autowired的，它是一个bean的后置处理器，在bean的属性注入的时候会用到
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
@@ -186,6 +190,9 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		// 获取并注册CommonAnnotationBeanPostProcessor后置处理器 的bd
+		// 处理一些公共注解的，它是一个bean的后置处理器，可以处理@PostConstruct和@PreDestroy还有@Resource等
+		// jsr250Present是先判断@Resource的路径存不存在，讲道理不会不存在，这是jdk里面的
+
 		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
@@ -194,6 +201,8 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		// 获取并注册PersistenceAnnotationBeanPostProcessor后置处理器 的bd
+		// jpaPresent 是先判断是否存在PersistenceAnnotationBeanPostProcessor这个类，很明显这是对jpa的处理，所以需要引入spring-orm的包，没有引入的话则spring不会注册这个类
+
 		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
 		if (jpaPresent && !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition();
@@ -210,6 +219,7 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		// 获取并注册EventListenerMethodProcessor后置处理器 的bd
+		// 对@EventListener注解的处理，spring实现事件监听的方式有很多种，其中一种就是在方法上添加@EventListener注解
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);
@@ -230,6 +240,11 @@ public abstract class AnnotationConfigUtils {
 			BeanDefinitionRegistry registry, RootBeanDefinition definition, String beanName) {
 
 		definition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+		/**
+		 * registry就是AnnotationApplicationContext
+		 * 这里是调用父类GenericApplicationContext中的registerBeanDefinition方法
+		 * 调用beanFactory将spring默认的BeanDefinition注册进去
+		 */
 		registry.registerBeanDefinition(beanName, definition);
 		return new BeanDefinitionHolder(definition, beanName);
 	}
