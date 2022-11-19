@@ -119,14 +119,30 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
+		// 1.判断是否已经存在 BeanFactory，如果存在则先销毁、关闭该 BeanFactory
 		if (hasBeanFactory()) {
+			// 先执行一个模版方法，销毁这个context管理的所有bean，默认实现销毁所有context中的单例缓存，调用DisposableBean.destroy()
+			// 和/或特定的"destroy-method"；
 			destroyBeans();
+			// 再closeBeanFactory，即设置beanFactory的id为null，beanFactory为null。
 			closeBeanFactory();
 		}
 		try {
+			// 2.创建一个新的BeanFactory
+			// createBeanFactory，为context创建一个internal bean factory。每次refresh()
+			// 都会被调用，默认实现创建一个以context的getInternalParentBeanFactory()-parent为parent bean factory的
+			// DefaultListableBeanFactory，子类可以重写此方法来自定义DefaultListableBeanFactory的设置。
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
+			// 将context的id设置为beanFactory的SerializationId。
 			beanFactory.setSerializationId(getId());
 			customizeBeanFactory(beanFactory);
+			// 3.加载 bean 定义BeanDefinitions。 加载 bean 定义，由 XmlWebApplicationContext 实现
+			// 里面的大致思路为：先用BeanFactory创建一个新的XmlBeanDefinitionReader；
+			// 然后设置beanDefinitionReader的environment、ResourceLoader、EntityResolver；
+			// 紧接着initBeanDefinitionReader，供子类覆写的方法，初始化beanDefinitionReader默认为空实现；
+			// 最后用指定的XmlBeanDefinitionReader加载bean definitions，bean factory的生命周期由refreshBeanFactory方法处理，
+			// 因此，这个方法只加载和/或注册bean definitions，委托ResourcePatternResolver解析location patterns到Resource实例，
+			// 先获取configLocations，再调用XmlBeanDefinitionReader的loadBeanDefinitions方法完成beanDefinitions的加载
 			loadBeanDefinitions(beanFactory);
 			this.beanFactory = beanFactory;
 		}
