@@ -727,7 +727,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		// 1.刷新 BeanFactory
 		/**
+		 * （1）如果ApplicationContext的具体实现是ClassPathXmlApplicationContext，则实际调用的是AbstractRefreshableApplicationContext的refreshBeanFactory
 		 * 该方法会解析所有 Spring 配置文件（通常我们会放在 resources 目录下），将所有 Spring 配置文件中的 bean 定义封装成 BeanDefinition，加载到 BeanFactory 中。
 		 * 	常见的，如果解析到<context:component-scan base-package="" /> 注解时，会扫描 base-package指定的目录，
 		 * 	将该目录下使用指定注解（@Controller、@Service、@Component、@Repository）的 bean 定义也同样封装成 BeanDefinition，加载到 BeanFactory 中。
@@ -735,8 +737,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 * 	beanDefinitionNames缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 集合。
 		 * 	beanDefinitionMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和 BeanDefinition 映射。
 		 * 	aliasMap缓存：所有被加载到 BeanFactory 中的 bean 的 beanName 和别名映射。
+		 *
+		 * 	（2）如果ApplicationContext的具体实现是AnnotationConfigApplicationContext，则实际调用的是GenericApplicationContext的refreshBeanFactory
+		 * 	GenericApplicationContext 中的实现非常简单。只是简单的将刷新状态置为true。
+		 * 	ApplicationContext配置类容器的loadBeanDefinition是在AbstractApplicationContext的invokeBeanFactoryPostProcessors方法中，
+		 * 	通过ConfigurationClassPostProcessor bean工厂后置处理器扫描加载的
 		 */
-		// 1.刷新 BeanFactory，由AbstractRefreshableApplicationContext实现
 		refreshBeanFactory();
 		// 2.拿到刷新后的 BeanFactory
 		return getBeanFactory();
