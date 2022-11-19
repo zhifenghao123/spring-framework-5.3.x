@@ -148,30 +148,44 @@ public abstract class AnnotationConfigUtils {
 	public static Set<BeanDefinitionHolder> registerAnnotationConfigProcessors(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
 
+		// 获取容器中的beanFactory，通过前面代码逻辑阅读可知，到了这里一定会获取到。因此将进入if分支
 		DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
 		if (beanFactory != null) {
+			// 此时beanFactory的属性dependencyComparator为null，因为初始化过程中，内部成员变量如果没有默认值，则默认为null，
+			// 所以如果第一次进来, 这里的判断一定成立，对dependencyComparator进行设置。
+			// AnnotationAwareOrderComparator继承了OrderComparator,
+			// 因此可以对实现了Ordered接口、打上@Order或者@Priority注解的类进行排序。
+			// 也就是说，在这里设置beanFactory中的orderComparator，以支持解析bean的排序功能。
 			if (!(beanFactory.getDependencyComparator() instanceof AnnotationAwareOrderComparator)) {
 				beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
 			}
+			// beanFactory初始化时，默认为SimpleAutowireCandidateResolver，因此第一次进来时这里的判断也一定成立。
+			// ContextAnnotationAutowireCandidateResolver最主要的作用就是支持@Lazy注解的类的处理。
 			if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
 				beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());
 			}
 		}
 
+		// 初始化一个bdh容器，用于盛放接下来将解析出来的后置处理器的bd。
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
 
+		// 容器在第一次初始化时，内部一个bd都没有的。
+		// 也就是说，从这里开始，容器将第一次装载bd，而这里的这些bd都是spring自带的后置处理器。
+		// 获取并注册ConfigurationClassPostProcessor后置处理器 的bd
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		// 获取并注册AutowiredAnnotationBeanPostProcessor后置处理器 的bd
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		// 获取并注册CommonAnnotationBeanPostProcessor后置处理器 的bd
 		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
@@ -179,6 +193,7 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, COMMON_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		// 获取并注册PersistenceAnnotationBeanPostProcessor后置处理器 的bd
 		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
 		if (jpaPresent && !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition();
@@ -194,12 +209,14 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		// 获取并注册EventListenerMethodProcessor后置处理器 的bd
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_PROCESSOR_BEAN_NAME));
 		}
 
+		// 获取并注册DefaultEventListenerFactory后置处理器 的bd
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(DefaultEventListenerFactory.class);
 			def.setSource(source);

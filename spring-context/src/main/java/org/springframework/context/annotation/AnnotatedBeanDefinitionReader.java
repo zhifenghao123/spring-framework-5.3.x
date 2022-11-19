@@ -68,6 +68,10 @@ public class AnnotatedBeanDefinitionReader {
 	 * @see #setEnvironment(Environment)
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
+		// getOrCreateEnvironment() 方法最主要是获取环境。实际类型其实默认的就是StandardEnvironment类。
+		// 这里的环境包括两方面：
+		// 1.systemEnvironment：操作系统环境。这样，Spring就可以获取到操作系统、CPU核心数等操作系统本身的数据。
+		// 2.systemProperties：JVM的环境变量。这样，Spring就可以获取到JVM的基础数据，比如我们在启动参数中手动设置的环境变量等。
 		this(registry, getOrCreateEnvironment(registry));
 	}
 
@@ -80,11 +84,16 @@ public class AnnotatedBeanDefinitionReader {
 	 * profiles.
 	 * @since 3.1
 	 */
+	// 这个构造方法很重要, 因为它涉及到spring容器当中的两个重要成员:条件解析器和后置处理器!
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environment environment) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		Assert.notNull(environment, "Environment must not be null");
+		// 设置registry，已经知道它的就是容器本身:AnnotationConfigApplicationContext
 		this.registry = registry;
+		// 创建条件处理器
+		// @ConditionalOnBean / @ConditionalOnClass 等条件注解.这些条件注解的解析就是ConditionEvaluator.
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+		// 非常关键！ 提前往容器中注册一些必要的后置处理器
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 
