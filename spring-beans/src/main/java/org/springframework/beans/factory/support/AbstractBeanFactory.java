@@ -941,9 +941,16 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		return result;
 	}
 
+	/*
+	该方法作用就是将 BeanPostProcessor 添加到 beanPostProcessors 缓存，这边的先移除再添加，主要是起一个排序的作用。
+	而 hasInstantiationAwareBeanPostProcessors 和 hasDestructionAwareBeanPostProcessors 变量
+	用于指示 beanFactory 是否已注册过 InstantiationAwareBeanPostProcessors 和 DestructionAwareBeanPostProcessor，
+	在之后的 IoC 创建过程会用到这两个变量，这边先有个印象。
+	 */
 	@Override
 	public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
 		Assert.notNull(beanPostProcessor, "BeanPostProcessor must not be null");
+		// 如果beanPostProcessor已经存在则移除（可以起到排序的效果，beanPostProcessor可能本来在前面，移除再添加，则变到最后面）
 		synchronized (this.beanPostProcessors) {
 			// Remove from old position, if any
 			this.beanPostProcessors.remove(beanPostProcessor);
@@ -1022,6 +1029,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @see #addBeanPostProcessor
 	 * @see org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor
 	 */
+	// 3.如果beanPostProcessor是InstantiationAwareBeanPostProcessor, 则将hasInstantiationAwareBeanPostProcessors设置为true,
+	// 该变量用于指示beanFactory是否已注册过InstantiationAwareBeanPostProcessors
 	protected boolean hasInstantiationAwareBeanPostProcessors() {
 		return !getBeanPostProcessorCache().instantiationAware.isEmpty();
 	}
@@ -1032,6 +1041,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @see #addBeanPostProcessor
 	 * @see org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor
 	 */
+	//如果beanPostProcessor是DestructionAwareBeanPostProcessor, 则将hasDestructionAwareBeanPostProcessors设置为true,
+	// 该变量用于指示beanFactory是否已注册过DestructionAwareBeanPostProcessor
 	protected boolean hasDestructionAwareBeanPostProcessors() {
 		return !getBeanPostProcessorCache().destructionAware.isEmpty();
 	}
