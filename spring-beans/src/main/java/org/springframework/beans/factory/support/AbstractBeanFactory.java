@@ -1745,7 +1745,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected boolean isFactoryBean(String beanName, RootBeanDefinition mbd) {
 		Boolean result = mbd.isFactoryBean;
 		if (result == null) {
+			// 1.拿到beanName对应的Bean实例的类型
 			Class<?> beanType = predictBeanType(beanName, mbd, FactoryBean.class);
+			// 2.返回beanType是否为FactoryBean本身、子类或子接口
 			result = (beanType != null && FactoryBean.class.isAssignableFrom(beanType));
 			mbd.isFactoryBean = result;
 		}
