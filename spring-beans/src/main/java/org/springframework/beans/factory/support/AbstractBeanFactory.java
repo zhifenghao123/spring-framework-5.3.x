@@ -941,9 +941,16 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		return result;
 	}
 
+	/*
+	该方法作用就是将 BeanPostProcessor 添加到 beanPostProcessors 缓存，这边的先移除再添加，主要是起一个排序的作用。
+	而 hasInstantiationAwareBeanPostProcessors 和 hasDestructionAwareBeanPostProcessors 变量
+	用于指示 beanFactory 是否已注册过 InstantiationAwareBeanPostProcessors 和 DestructionAwareBeanPostProcessor，
+	在之后的 IoC 创建过程会用到这两个变量，这边先有个印象。
+	 */
 	@Override
 	public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
 		Assert.notNull(beanPostProcessor, "BeanPostProcessor must not be null");
+		// 如果beanPostProcessor已经存在则移除（可以起到排序的效果，beanPostProcessor可能本来在前面，移除再添加，则变到最后面）
 		synchronized (this.beanPostProcessors) {
 			// Remove from old position, if any
 			this.beanPostProcessors.remove(beanPostProcessor);
@@ -1022,6 +1029,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @see #addBeanPostProcessor
 	 * @see org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor
 	 */
+	// 3.如果beanPostProcessor是InstantiationAwareBeanPostProcessor, 则将hasInstantiationAwareBeanPostProcessors设置为true,
+	// 该变量用于指示beanFactory是否已注册过InstantiationAwareBeanPostProcessors
 	protected boolean hasInstantiationAwareBeanPostProcessors() {
 		return !getBeanPostProcessorCache().instantiationAware.isEmpty();
 	}
@@ -1032,6 +1041,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @see #addBeanPostProcessor
 	 * @see org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor
 	 */
+	//如果beanPostProcessor是DestructionAwareBeanPostProcessor, 则将hasDestructionAwareBeanPostProcessors设置为true,
+	// 该变量用于指示beanFactory是否已注册过DestructionAwareBeanPostProcessor
 	protected boolean hasDestructionAwareBeanPostProcessors() {
 		return !getBeanPostProcessorCache().destructionAware.isEmpty();
 	}
@@ -1349,12 +1360,33 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @throws NoSuchBeanDefinitionException if there is no bean with the given name
 	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
 	 */
+	/**
+	 *
+	 * MergedBeanDefinition表示 “合并的 bean 定义”，之所以称之为 “合并的”，是因为存在 “子定义” 和 “父定义” 的情况。
+	 * 对于一个 bean 定义来说，可能存在以下几种情况：
+	 * （1）该 BeanDefinition 存在 “父定义”：首先使用 “父定义” 的参数构建一个 RootBeanDefinition，然后再使用该 BeanDefinition 的参数来进行覆盖。
+	 * （2）该 BeanDefinition 不存在 “父定义”，并且该 BeanDefinition 的类型是 RootBeanDefinition：直接返回该 RootBeanDefinition 的一个克隆。
+	 * （3）该 BeanDefinition 不存在 “父定义”，但是该 BeanDefinition 的类型不是 RootBeanDefinition：使用该 BeanDefinition 的参数构建一个RootBeanDefinition。
+	 * 之所以区分出2和3，是因为通常 BeanDefinition 在之前加载到 BeanFactory 中的时候，通常是被封装成 GenericBeanDefinition 或
+	 * ScannedGenericBeanDefinition，但是从这边之后 bean 的后续流程处理都是针对 RootBeanDefinition，因此在这边会统一将 BeanDefinition 转换成
+	 * RootBeanDefinition。
+	 *
+	 * 在我们日常使用的过程中，通常会是上面的第3种情况。
+	 * 1）如果我们使用 XML 配置来注册 bean，则该 bean 定义会被封装成：GenericBeanDefinition；
+	 * 2）如果我们使用注解的方式来注册bean，也就是<context:component-scan /> + @Compoment（通过@ComponentScan扫描或扫描行为产生的)，则该 bean 定义会被封装成 ScannedGenericBeanDefinition。
+	 * 3）如果我们使用注解的方式来注册bean来产生注册@Bean，则该 bean 定义会被封装成： ConfigurationClassBeanDefinition（@Bean标注的产生)
+	 * 4）如果我们使用注解的方式来注册bean来产生注册@Configuration，则该 bean 定义会被封装成：AnnotatedGenericBeanDefinition（@Configuration标注的）
+	 */
 	protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
+		// 1.检查缓存，若存在直接返回
 		// Quick check on the concurrent map first, with minimal locking.
 		RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
 		if (mbd != null && !mbd.stale) {
 			return mbd;
 		}
+		// 2.如果不存在于缓存中
+		// 2.1 getBeanDefinition(beanName)： 获取beanName对应的BeanDefinition，从beanDefinitionMap缓存中获取
+		// 2.2 getMergedBeanDefinition: 根据beanName和对应的BeanDefinition，获取MergedBeanDefinition
 		return getMergedBeanDefinition(beanName, getBeanDefinition(beanName));
 	}
 
@@ -1390,6 +1422,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			RootBeanDefinition mbd = null;
 			RootBeanDefinition previous = null;
 
+			// 尝试从缓存中拿
 			// Check with full lock now in order to enforce the same merged instance.
 			if (containingBd == null) {
 				mbd = this.mergedBeanDefinitions.get(beanName);
@@ -1397,24 +1430,33 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			if (mbd == null || mbd.stale) {
 				previous = mbd;
+				//如果当前BeanDefinition没有指定parentName,说明其不存在父BeanDefinition，不需要合并。以RootBeanDefinition形式展现
 				if (bd.getParentName() == null) {
+					// 如果bd是RootBeanDefinition类型，直接类型转换
 					// Use copy of given root bean definition.
 					if (bd instanceof RootBeanDefinition) {
 						mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
 					}
 					else {
+						//通过bd属性构造RootBeanDefinition
 						mbd = new RootBeanDefinition(bd);
 					}
 				}
 				else {
+					// 存在parentName，当前bd需要与其父bd合并
 					// Child bean definition: needs to be merged with parent.
 					BeanDefinition pbd;
 					try {
+						//得到父BeanName
 						String parentBeanName = transformedBeanName(bd.getParentName());
+						//!beanName.equals(parentBeanName) 条件成立 说明当前beanName属于子bd
 						if (!beanName.equals(parentBeanName)) {
+							//递归地以父bd名称 查找父BeanDefinition。之所以递归地查找，是因为 可能此时的parentBeanName还有父，实体类存在多重继承关系
 							pbd = getMergedBeanDefinition(parentBeanName);
 						}
 						else {
+							//走到这里，说明beanName.equals(parentBeanName),很有可能是父bd查找BeanDefinition时走来的。
+							//获取父BeanFactory，BeanFactory也是有层次的，有父子关系的，可参见ConfigurableBeanFactory#setParentBeanFactory
 							BeanFactory parent = getParentBeanFactory();
 							if (parent instanceof ConfigurableBeanFactory) {
 								pbd = ((ConfigurableBeanFactory) parent).getMergedBeanDefinition(parentBeanName);
@@ -1430,11 +1472,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						throw new BeanDefinitionStoreException(bd.getResourceDescription(), beanName,
 								"Could not resolve parent bean definition '" + bd.getParentName() + "'", ex);
 					}
+					// pbd是父BeanDefinition，由其构造为RootBeanDefinition
 					// Deep copy with overridden values.
 					mbd = new RootBeanDefinition(pbd);
+					//bd是子BeanDefinition，主要是继承父类的属性，并覆盖与父类同名的属性，有兴趣的可以看一下overrideFrom方法实现
 					mbd.overrideFrom(bd);
 				}
 
+				// 如果父bd未指定scope，则设置默认值
 				// Set default singleton scope, if not configured before.
 				if (!StringUtils.hasLength(mbd.getScope())) {
 					mbd.setScope(SCOPE_SINGLETON);
