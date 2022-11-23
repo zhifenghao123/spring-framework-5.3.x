@@ -1378,13 +1378,15 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * 4）如果我们使用注解的方式来注册bean来产生注册@Configuration，则该 bean 定义会被封装成：AnnotatedGenericBeanDefinition（@Configuration标注的）
 	 */
 	protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
-		// 检查缓存，若存在直接返回
+		// 1.检查缓存，若存在直接返回
 		// Quick check on the concurrent map first, with minimal locking.
 		RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
 		if (mbd != null && !mbd.stale) {
 			return mbd;
 		}
-		//getBeanDefinition(beanName)==>实际上去DefaultListableBeanFactory.beanDefinitionMap中根据key查找BeanDefinition，
+		// 2.如果不存在于缓存中
+		// 2.1 getBeanDefinition(beanName)： 获取beanName对应的BeanDefinition，从beanDefinitionMap缓存中获取
+		// 2.2 getMergedBeanDefinition: 根据beanName和对应的BeanDefinition，获取MergedBeanDefinition
 		return getMergedBeanDefinition(beanName, getBeanDefinition(beanName));
 	}
 
