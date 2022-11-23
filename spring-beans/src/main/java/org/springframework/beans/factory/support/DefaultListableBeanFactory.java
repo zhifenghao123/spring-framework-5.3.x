@@ -930,6 +930,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
+			// MergedBeanDefinition是spring获取bean流程中的一个重要处理过程，他将基础的BeanDefinition合并为一个新
+			// 的BeanDefinition对象(RootBeanDefinition)，后续的处理过程都依赖这个新对象，
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				if (isFactoryBean(beanName)) {
