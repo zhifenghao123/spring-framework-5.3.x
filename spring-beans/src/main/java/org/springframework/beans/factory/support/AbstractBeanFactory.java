@@ -366,6 +366,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		else {
 			//只有在单例情况下才会尝试解决循环依赖
 			//1、原型模式下，如果存在循环依赖，将会直接报错
+			// 所以Spring循环依赖不支持原型模式，不进行循环依赖的处理，不会缓存对应的bean实例
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
 			if (isPrototypeCurrentlyInCreation(beanName)) {
@@ -2038,11 +2039,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected Object getObjectForBeanInstance(
 			Object beanInstance, String name, String beanName, @Nullable RootBeanDefinition mbd) {
 
+		//如果指定的name是工厂相关（以&作为前缀）
 		// Don't let calling code try to dereference the factory if the bean isn't a factory.
 		if (BeanFactoryUtils.isFactoryDereference(name)) {
 			if (beanInstance instanceof NullBean) {
 				return beanInstance;
 			}
+			//如果beanInstance不是工厂类型，直接抛异常
 			if (!(beanInstance instanceof FactoryBean)) {
 				throw new BeanIsNotAFactoryException(beanName, beanInstance.getClass());
 			}
@@ -2052,6 +2055,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			return beanInstance;
 		}
 
+		//如果不是工厂bean类型，则直接返回
 		// Now we have the bean instance, which may be a normal bean or a FactoryBean.
 		// If it's a FactoryBean, we use it to create a bean instance, unless the
 		// caller actually wants a reference to the factory.
@@ -2059,13 +2063,17 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			return beanInstance;
 		}
 
+		// 执行到这里说明用户需要获得工厂对应的getObject方法返回的实例
 		Object object = null;
 		if (mbd != null) {
 			mbd.isFactoryBean = true;
 		}
 		else {
+			// 从缓存中获取实例
 			object = getCachedObjectForFactoryBean(beanName);
 		}
+		// 这里先从缓存factoryBeanObjectCache中获取，获取到直接返回
+		// 如果获取不到会调用getObject方法获取实例，同时放入factoryBeanObjectCache缓存中
 		if (object == null) {
 			// Return bean instance from factory.
 			FactoryBean<?> factory = (FactoryBean<?>) beanInstance;
