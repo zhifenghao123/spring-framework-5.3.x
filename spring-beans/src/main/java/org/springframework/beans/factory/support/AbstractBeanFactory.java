@@ -249,9 +249,103 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			String name, @Nullable Class<T> requiredType, @Nullable Object[] args, boolean typeCheckOnly)
 			throws BeansException {
 
+		// 一、提取beanName
+		// 这里主要做了两步工作
+		// (1)去除name开头的所有&字符，即factoryBean的修饰符
+		// (2)去aliasMap查找最终的beanName
 		String beanName = transformedBeanName(name);
 		Object beanInstance;
 
+		/**
+		 * Commented By Haozhifeng on 2022-11-24
+		 * 注意：这是第一次调用getSingleton方法，Spring还会在后面调用一次，但是两次调用的不是同一个方法，属于方法重载。
+		 * 第一次getSingleton(beanName)也是循环依赖最重要的方法；
+		 * 关于getSingleton(beanName)方法的总结如下：
+		 * 首先，Spring会去单例池根据名字获取这个bean，单例池就是一个map，如果对象被创建了，则直接从map中拿出来并返回；
+		 * 但是Spring在创建一个bean的时候，会去从单例池中获取一次这个bean。
+		 * 为什么创建bean会调用doGetBean方法呢？Spring的源码以其书写优秀、命名优秀著名，那怎么解释这个方法呢？
+		 * 其实很简单，doGetBean这个方法不仅仅在创建bean的时候会被调用，在getBean的时候也会被调用，它是创建bean和getBean通用的方法，
+		 * 这解释了这个方法的名字意义。
+		 * 再解释这个方法为什么会在创建bean的时候会被调用。
+		 * 主要的原因也是这里要阐述的一点，就是因为循环引用。
+		 * 由于循环引用需要在创建bean的过程中去获取被引用的那个类，而被引用的这个类没有创建，则会调用createBean来创建这个bean，
+		 * 在创建这个被引用的bean的过程中，会判断这个bean的对象有没有实例化，所以还是要getBean。
+		 *
+		 * bean的对象？什么意思呢？
+		 * 为了方便阅读，我们区分一下这两个概念，什么是bean，是么是对象？一个对象和bean是有区别的。
+		 * 对象：只要被实例化就可以称之为对象
+		 * bean：首先的是一个对象，然后这个对象需要经过一些列bean的生命周期，最后这个对象put到单例池才能算一个bean。
+		 * 简而言之就是spring先new一个对象，继而对这个对象进行生命周期回调，
+		 * 接着对这个对象进行属性填充，也就是大家说的自动注入，然后再进行AOP判断等等，这一些操作简称为spring生面周期
+		 * 所以bean是一个经历了spring周期的对象，和一个对象有区别。
+		 *
+		 * 再回到前面说的循环引用，首先Spring扫描到一个需要被实例化的类A，于是Spring就创建A，A a = new A(); new A的过程会调用getBean("a");
+		 * 所谓的getBean方法--核心也就是笔者现在写注释的这个getSingleton(beanName),这个时候get出来肯定为空？为什么是空呢？
+		 * 可能有的读者会认为getBean就是去容器中获取，所以肯定为空，其实不然，接着往下看。
+		 * 如果getA等于空，Spring就回去实例化A，也就是上面的new A，
+		 * 但是在实例化A的时候会再次调用一下getSingleton(String beanName, ObjectFactory<?> singletonFactory)
+		 * 笔者上面说过现在写的注释是给getSingleton(beanName)，也即是第一次调用getSingleton(beanName)
+		 * 实例化总共会调用两次getSingleton方法，但是是重载。
+		 * 第二次调用getSingleton方法的时候Spring会在一个set集合当中记录一下这个类正在被创建，这个一定要记住，
+		 * 在调用完第一个getSingleton完成之后，Spring判断这个类没有创建，然后调用第二次getSingleton，
+		 * 在第二次getSingleton里面记录了一下自己已经开始实例化这个类，
+		 * 这是循环依赖的最经典的地方，两次getSingleton的调用，
+		 * 也是回答面试关的时候关于循环依赖必须要回答的地方。
+		 *
+		 * 需要说明的是Spring实例化一个对象，其底层的实现方式是反射；Spring实例化一个对象的过程非常复杂，需要推断构造方法等等；
+		 * 在这里可以理解Spring直接通过new关键字来实例化一个对象，
+		 * 但是这个时候对象a仅仅是一个对象，还不是一个完整的bean， 接着让的这个对象去完成Spring的bean的生命周期，
+		 * 过程中Spring会判断容器是否允许循环引用（Spring是默认支持循环引的）
+		 * 如果允许循环依赖，Spring会把这个对象（还不是bean）临时存储起来，放到一个map当中，
+		 * 注意这个map和单例池是两个map，在Spring源码中单例池的map叫做singletonObjects， 而这个存储临时对象的map叫做singletonFactories
+		 * 当然Spring还有一个存储临时对象的map叫做earlySingletonObjects，
+		 *
+		 * 这里再补充一下Spring容器中的三个map，也称之为三级缓存。
+		 * 第一个map singletonObjects存放的单例的bean；
+		 * 第二个map singletonFactories存放的临时对象（没有完成Spring bean生命周期的对象）
+		 * 第三个map earlySingletonObjects存放的临时对象（没有完成Spring bean生命周期的对象）
+		 * 这里把第二个和第三个map功能写成一模一样，其实第二个和第三个map又不一样的地方，但这里不展开详述，后面会分析
+		 * 第一个map主要是为了直接缓存没有创建好的bean，方便程序员去getBean，很好理解。
+		 * 第二个和第三个map主要为了循环引用，为什么为了方便循环引用
+		 *
+		 * 把对象a缓存到第二个map之后，会接着完善生命周期， 当然Spring bean的生命周期有很多步骤，
+		 * 当进行到对象a的属性填充这一周期的时候，发现a依赖了一个B类，
+		 * 所以Spring就回去判断这个B类到底有没有bean在容器中，这里的判断就是从第一个map即单例池当中去拿一个bean，
+		 * 假设没有，那么Spring会先去调用createBean创建这个bean， 于是又回到和创建A一样的流程，在创建B的时候同样也会去getBean("B")；
+		 * getBean的核心也就是笔者现在写注释的这个getSingleton(beanName)方法，
+		 * 这个时候get出来肯定为空，为什么是空呢？
+		 * 第一次调用getSingleton完成之后会调用第二次getSingleton， 第二次调用getSingleton同样会在set集合中去记录B正在创建，
+		 * 这个时候set集合至少有了两个记录了A和B；
+		 * 如果空就为b=new B():创建一个b对象； 创建完B的对象之后，接着完善B的生命周期，
+		 * 同样也会判断是否允许循环依赖，如果允许则把对象b存到第二个map当中，这个时候第二个map当中至少有两个对象了，a和b；
+		 * 接着继续生面周期：当进行到b对象的属性填充的时候发觉b需要依赖A，于是就去容器看看A有没有创建，说白了就是从第一个map当中去找a，
+		 * 有人会说不是A在前面创建了a吗？注意那只是个对象，不是bean， 还不在第一个map当中，所以b判定A没有创建，于是就去创建A；
+		 * 那么再次回到了原点了，创建A的过程中：首先调用getBean("a"),
+		 * 上文说到getBean("a")的核心就是getSingleton(beanName)
+		 * 上文也说了get出来a==null；但是这次却不等于空了，
+		 * 这次能拿出一个a对象；注意是对象不是bean
+		 * 为什么两次不同？原因在于getSingleton(beanName)的源码
+		 * getSingleton(beanName)首先从第一个map当中获取bean，这里就是获取a，但是获取不到：然后判断a是不是等于空，如果等于空则在判断a是不是正在创建？
+		 * 就是判断a那个set集合singletonsCurrentlyInCreation当中有没有记录A，如果这个集合当中包含了A则直接把a对象从map当中get出来并且返回，
+		 * 所以这一次就不等于空了，于是B就可以自动注入a对象了。
+		 * 这个时候a还只是对象，a这个对象里面依赖的B还没有注入；
+		 * 当b对象注入完成a之后，把B的周期走完，存储到容器当中，
+		 * 存储完之后继续返回，返回到a注入b哪里？
+		 * 因为b的创建是因为a需要注入b；于是去get b
+		 * 当b创建完成一个bean之后，返回b（b已经是一个bean了）
+		 * 需要说明的是b是一个bean意味着b已经注入完成了a；
+		 * 由于返回一个b，故而a也能注入b了；
+		 * 接着a对象继续完成生命周期，当走完之后a也在容器中了
+		 * 至此，循环依赖搞定
+		 * 以上是循环依赖的整个过程，其中getSingleton(beanName)这个方法至关重要
+		 */
+
+		/*
+		 * 这里是检查缓存中或者实例工厂中是否有对应的实例，这个位置就是三级缓存解决循环依赖的方法
+		 * 原因：因为在创建单例bean的时候会存在依赖注入的情况。
+		 * 而在创建依赖的时候为了避免循环依赖，Spring创建bean的原则是不等bean创建完成就会将创建bean的ObjectFactory提早曝光，
+		 * 也就是将ObjectFactory加入到缓存中，一旦下个bean创建的时候需要依赖上个bean则直接使用ObjectFactory
+		 */
 		// Eagerly check singleton cache for manually registered singletons.
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
@@ -264,21 +358,29 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					logger.trace("Returning cached instance of singleton bean '" + beanName + "'");
 				}
 			}
+			// 当前的sharedInstance只是原始的bean状态，这里需要进一步加工处理
 			beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
 
+		// 如果没有找到，则直接创建实例
 		else {
+			//只有在单例情况下才会尝试解决循环依赖
+			//1、原型模式下，如果存在循环依赖，将会直接报错
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
 
+			//2、如果所有已经加载的bean中不包括beanName，则尝试从parentBeanFactory中查找
 			// Check if bean definition exists in this factory.
 			BeanFactory parentBeanFactory = getParentBeanFactory();
+			//如果parentBeanFactory存在且当前的beanDefinitionMap不存在beanName的配置，
+			//就只能调用parentBeanFactory的getBean方法去加载bean了
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
 				String nameToLookup = originalBeanName(name);
+				//递归查找
 				if (parentBeanFactory instanceof AbstractBeanFactory) {
 					return ((AbstractBeanFactory) parentBeanFactory).doGetBean(
 							nameToLookup, requiredType, args, typeCheckOnly);
@@ -302,15 +404,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			StartupStep beanCreation = this.applicationStartup.start("spring.beans.instantiate")
 					.tag("beanName", name);
+			//3、手动加载bean
 			try {
 				if (requiredType != null) {
 					beanCreation.tag("beanType", requiredType::toString);
 				}
+				//将存储XML配置信息的GenericBeanDefinition转换成RootBeanDefinition，
+				//如果BeanName是子Bean的话同时会合并父类的相关属性
 				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
 				String[] dependsOn = mbd.getDependsOn();
+				//如果存在依赖则需要定义实例化依赖的bean
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
 						if (isDependent(beanName, dep)) {
@@ -319,6 +425,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						}
 						registerDependentBean(dep, beanName);
 						try {
+							//递归调用getBean
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {
@@ -328,6 +435,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 				}
 
+				//实例化当前bean的所有依赖后便会实例化mbd本身了
+				//下面是根据不同的scope类型来创建mbd
+				//单例模式创建Bean
 				// Create bean instance.
 				if (mbd.isSingleton()) {
 					sharedInstance = getSingleton(beanName, () -> {
@@ -345,6 +455,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
+				//原型模式
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
@@ -358,6 +469,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					beanInstance = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
 
+				//其余模式
 				else {
 					String scopeName = mbd.getScope();
 					if (!StringUtils.hasLength(scopeName)) {
@@ -395,6 +507,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 		}
 
+		//8、如果传递了类型，则需要进行类型转换
 		return adaptBeanInstance(name, beanInstance, requiredType);
 	}
 
