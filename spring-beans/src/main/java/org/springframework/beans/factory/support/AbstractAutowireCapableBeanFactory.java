@@ -671,19 +671,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Override
 	@Nullable
 	protected Class<?> predictBeanType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
+		// 1.拿到beanName的类型
 		Class<?> targetType = determineTargetType(beanName, mbd, typesToMatch);
+
+		// 2.应用SmartInstantiationAwareBeanPostProcessors后置处理器，来预测实例化的最终类型，
+		// SmartInstantiationAwareBeanPostProcessors继承了InstantiationAwareBeanPostProcessor，
+		// InstantiationAwareBeanPostProcessor的postProcessBeforeInstantiation方法可以改变Bean实例的类型，
+		// 而SmartInstantiationAwareBeanPostProcessors的predictBeanType方法可以预测这个类型
+
 		// Apply SmartInstantiationAwareBeanPostProcessors to predict the
 		// eventual type after a before-instantiation shortcut.
 		if (targetType != null && !mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			boolean matchingOnlyFactoryBean = typesToMatch.length == 1 && typesToMatch[0] == FactoryBean.class;
 			for (SmartInstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().smartInstantiationAware) {
+				// 3.调用predictBeanType方法
 				Class<?> predicted = bp.predictBeanType(targetType, beanName);
 				if (predicted != null &&
 						(!matchingOnlyFactoryBean || FactoryBean.class.isAssignableFrom(predicted))) {
+					// 4.如果predicted不为空 && (typesToMatch长度不为1 || typesToMatch[0]不为FactoryBean.class ||
+					// predicted是FactoryBean本身、子类或子接口)，则返回predicted
 					return predicted;
 				}
 			}
 		}
+		// 5.否则返回beanName的类型
 		return targetType;
 	}
 
