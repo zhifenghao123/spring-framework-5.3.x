@@ -57,6 +57,7 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class RootBeanDefinition extends AbstractBeanDefinition {
 
+	// BeanDefinitionHolder存储有Bean的名称、别名、BeanDefinition
 	@Nullable
 	private BeanDefinitionHolder decoratedDefinition;
 
