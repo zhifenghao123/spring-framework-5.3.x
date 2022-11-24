@@ -53,6 +53,7 @@ import org.springframework.util.Assert;
  * @see GenericBeanDefinition
  * @see ChildBeanDefinition
  */
+// 简单的说：在多继承体系中，RootBeanDefinition代表的是当前初始化类的父类的BeanDefinition 若没有父类，那就是它自己
 @SuppressWarnings("serial")
 public class RootBeanDefinition extends AbstractBeanDefinition {
 
