@@ -61,6 +61,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	@Nullable
 	private BeanDefinitionHolder decoratedDefinition;
 
+	// AnnotatedElement 是java反射包的接口，通过它可以查看Bean的注解信息
 	@Nullable
 	private AnnotatedElement qualifiedElement;
 
