@@ -415,9 +415,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
 
+				//检查是否有depends on
 				// Guarantee initialization of beans that the current bean depends on.
 				String[] dependsOn = mbd.getDependsOn();
-				//如果存在依赖则需要定义实例化依赖的bean
+				// 如果存在依赖则需要定义实例化依赖的bean
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
 						if (isDependent(beanName, dep)) {
@@ -441,8 +442,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				//单例模式创建Bean
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					//这里创建完bean后直接放到缓存中
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
+							//关键方法
+							// 最后会来到AbstractAutowireCapableBeanFactory#createBean
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {
