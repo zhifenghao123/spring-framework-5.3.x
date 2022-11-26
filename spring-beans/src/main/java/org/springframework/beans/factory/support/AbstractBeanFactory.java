@@ -2312,12 +2312,36 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	static class BeanPostProcessorCache {
 
+		/**
+		 * 默认情况下，beanPostProcessors会有7个实例，分别为：
+		 * （1）org.springframework.context.annotation.AnnotationConfigApplicationContext
+		 * （2）org.springframework.context.annotation.
+		 * （3）org.springframework.context.support.PostProcessorRegistrationDelegate.BeanPostProcessorChecker
+		 * （4）org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator
+		 * （5）org.springframework.context.annotation.CommonAnnotationBeanPostProcessor
+		 * （6）org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor
+		 * （7）org.springframework.context.support.ApplicationListenerDetector
+		 *
+		 * 并且按照不同BeanPostProcessor作用，分为四类，也就是BeanPostProcessorCache中的四个分组
+		 */
+
+		// ConfigurationClassPostProcessor$ImportAwareBeanPostProcessor
+		// AnnotationAwareAspectJAutoProxyCreator
+		// CommonAnnotationBeanPostProcessor
+		// AutowiredAnnotationBeanPostProcessor
 		final List<InstantiationAwareBeanPostProcessor> instantiationAware = new ArrayList<>();
 
+		// AnnotationAwareAspectJAutoProxyCreator
+		// AutowiredAnnotationBeanPostProcessor
 		final List<SmartInstantiationAwareBeanPostProcessor> smartInstantiationAware = new ArrayList<>();
 
+		// CommonAnnotationBeanPostProcessor
+		// ApplicationListenerDetector
 		final List<DestructionAwareBeanPostProcessor> destructionAware = new ArrayList<>();
 
+		// CommonAnnotationBeanPostProcessor
+		// AutowiredAnnotationBeanPostProcessor
+		// ApplicationListenerDetector
 		final List<MergedBeanDefinitionPostProcessor> mergedDefinition = new ArrayList<>();
 	}
 
