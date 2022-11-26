@@ -20,6 +20,7 @@ activemq-data/
 classes/
 /build
 buildSrc/build
+buildSrc/.gradle
 /spring-*/build
 /spring-core/graalvm/build
 /spring-core/kotlin-coroutines/build
