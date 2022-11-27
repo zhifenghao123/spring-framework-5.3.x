@@ -55,6 +55,8 @@ import org.springframework.lang.Nullable;
  * @see ConfigurableBeanFactory#addBeanPostProcessor
  * @see BeanFactoryPostProcessor
  */
+ //该接口为「Bean后置处理器」，该接口及其子接口可以在Bean生命周期中实现Bean实例定制化功能。
+// Spring Bean 属性赋值、AOP代理等功能均是通过该接口实现，该接口重要性可见一斑。
 public interface BeanPostProcessor {
 
 	/**
@@ -70,6 +72,10 @@ public interface BeanPostProcessor {
 	 * @throws org.springframework.beans.BeansException in case of errors
 	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
 	 */
+	// 在显示调用bean的任何初始化方法之前调用该方法完成一些定制的初始化任务, 调用方法时, bean已经完成实例化、依赖注入（属性赋值）
+	// 初始化方法主要包括：
+	// 1. InitializingBean 接口的 afterPropertiesSet方法
+	// 2. 用户自定义的 init-method
 	@Nullable
 	default Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
@@ -96,6 +102,7 @@ public interface BeanPostProcessor {
 	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
 	 * @see org.springframework.beans.factory.FactoryBean
 	 */
+	// bean所有初始化方法执行完成后调用该方法
 	@Nullable
 	default Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
