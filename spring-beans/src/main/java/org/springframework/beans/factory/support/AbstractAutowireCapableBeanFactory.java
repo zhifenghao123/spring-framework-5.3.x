@@ -1251,10 +1251,26 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/*  spring 通过构造方法实例化 bean，首先要推断构造方法，这个分两种类型
+		  1、手动注入
+             会在后置处理器中 找到实现 SmartInstantiationAwareBeanPostProcessor接口的类型
+             AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出
+             合适的构造方法创建对象
+		     1.1、只有一个无参构造方法 ctors为 null 使用默认无参构造方法
+		     1.2 如果有多个构造方法 ctors为 null 使用默认无参构造方法
+		     1.3  如果只有一个有参构造方法 ctors不为null 因为只有一个有参数的 只能用这个了
+		     1.4、多个构造方法 且只有一个构造方法加了@Autowired(required = true) 用这个构造方法来创建对象
+		     1.5、多个构造方法 且多个构造方法加了@Autowired(required = true)  spring ioc容器报错
+		     1.6、多个构造方法 且多个构造方法加了@Autowired(required = false)  就把构造方法都加到集合中 第二次推断
+		  2、自动注入 --通过构造方法自动注入
+		     2.1、如果有多个构造方法  找出最优的构造器 参数最多的 为最优的
+		 */
 		// Candidate constructors for autowiring?
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			//使用容器的自动装配特性，调用匹配的构造方法实例化
+			//使用推断出来的构造方法找到一个可以用的 实例化bean
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
@@ -1264,6 +1280,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			return autowireConstructor(beanName, mbd, ctors, null);
 		}
 
+		// 使用默认的无参构造方法实例化
 		// No special handling: simply use no-arg constructor.
 		return instantiateBean(beanName, mbd);
 	}
