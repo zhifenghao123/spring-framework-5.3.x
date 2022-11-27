@@ -78,6 +78,11 @@ public interface BeanPostProcessor {
 	// 2. 用户自定义的 init-method
 	@Nullable
 	default Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		/**
+		 * 注意：方法返回值不能为null
+		 * 如果返回null那么在后续初始化方法将报空指针异常或者通过getBean()方法获取不到bean实例对象
+		 * 因为后置处理器从Spring IoC容器中取出bean实例对象没有再次放回IoC容器中
+		 */
 		return bean;
 	}
 
@@ -105,6 +110,11 @@ public interface BeanPostProcessor {
 	// bean所有初始化方法执行完成后调用该方法
 	@Nullable
 	default Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+		/**
+		 * 注意：方法返回值不能为null
+		 * 如果返回null那么在后续初始化方法将报空指针异常或者通过getBean()方法获取不到bean实例对象
+		 * 因为后置处理器从Spring IoC容器中取出bean实例对象没有再次放回IoC容器中
+		 */
 		return bean;
 	}
 
