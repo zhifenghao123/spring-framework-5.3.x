@@ -528,8 +528,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			// 在 bean 初始化前应用后置处理，如果后置处理返回的 bean 不为空，则直接返回
-			// 这是第一次调用后置处理器
+			// 在 bean 初始化前应用后置处理，如果Bean配置了初始化前和初始化后的处理器，则试图返回一个需要创建Bean的代理对象，
+			// 如果后置处理返回的 bean 不为空，则直接返回
+			// 第一次调用bean后置处理器 主要判断bean是否需要被代理，bean一般都为空
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
@@ -1160,7 +1161,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Nullable
 	protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
 		Object bean = null;
+		// 如果beforeInstantiationResolved还没有设置或者是false（说明还没有需要在实例化前执行的操作）
 		if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
+			// 判断是否有注册过InstantiationAwareBeanPostProcessor类型的bean
 			// Make sure bean class is actually resolved at this point.
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 				Class<?> targetType = determineTargetType(beanName, mbd);
