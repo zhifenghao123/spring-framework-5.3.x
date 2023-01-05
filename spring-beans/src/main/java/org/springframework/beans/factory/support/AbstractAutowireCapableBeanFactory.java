@@ -528,8 +528,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			// 在 bean 初始化前应用后置处理，如果后置处理返回的 bean 不为空，则直接返回
-			// 这是第一次调用后置处理器
+			// 在 bean 初始化前应用后置处理，如果Bean配置了初始化前和初始化后的处理器，则试图返回一个需要创建Bean的代理对象，
+			// 如果后置处理返回的 bean 不为空，则直接返回
+			// 第一次调用bean后置处理器 主要判断bean是否需要被代理，bean一般都为空
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
@@ -1160,7 +1161,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Nullable
 	protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
 		Object bean = null;
+		// 如果beforeInstantiationResolved还没有设置或者是false（说明还没有需要在实例化前执行的操作）
 		if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
+			// 判断是否有注册过InstantiationAwareBeanPostProcessor类型的bean
 			// Make sure bean class is actually resolved at this point.
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 				Class<?> targetType = determineTargetType(beanName, mbd);
@@ -1248,10 +1251,26 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/*  spring 通过构造方法实例化 bean，首先要推断构造方法，这个分两种类型
+		  1、手动注入
+             会在后置处理器中 找到实现 SmartInstantiationAwareBeanPostProcessor接口的类型
+             AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出
+             合适的构造方法创建对象
+		     1.1、只有一个无参构造方法 ctors为 null 使用默认无参构造方法
+		     1.2 如果有多个构造方法 ctors为 null 使用默认无参构造方法
+		     1.3  如果只有一个有参构造方法 ctors不为null 因为只有一个有参数的 只能用这个了
+		     1.4、多个构造方法 且只有一个构造方法加了@Autowired(required = true) 用这个构造方法来创建对象
+		     1.5、多个构造方法 且多个构造方法加了@Autowired(required = true)  spring ioc容器报错
+		     1.6、多个构造方法 且多个构造方法加了@Autowired(required = false)  就把构造方法都加到集合中 第二次推断
+		  2、自动注入 --通过构造方法自动注入
+		     2.1、如果有多个构造方法  找出最优的构造器 参数最多的 为最优的
+		 */
 		// Candidate constructors for autowiring?
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			//使用容器的自动装配特性，调用匹配的构造方法实例化
+			//使用推断出来的构造方法找到一个可以用的 实例化bean
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
@@ -1261,6 +1280,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			return autowireConstructor(beanName, mbd, ctors, null);
 		}
 
+		// 使用默认的无参构造方法实例化
 		// No special handling: simply use no-arg constructor.
 		return instantiateBean(beanName, mbd);
 	}

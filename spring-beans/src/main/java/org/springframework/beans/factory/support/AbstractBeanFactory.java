@@ -359,6 +359,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 			// 当前的sharedInstance只是原始的bean状态，这里需要进一步加工处理
+			/**
+			 *  如果是FactoryBean 类型的，想获取FactoryBean本身，也不会做特别的处理
+			 *  如果是普通的单例bean，会直接返回sharedInstance
+			 *  如果是FactoryBean 类型的，想获取普通单例bean，则需要getObject工厂方法获得bean实例
+			 * */
 			beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
 
@@ -378,6 +383,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			//如果parentBeanFactory存在且当前的beanDefinitionMap不存在beanName的配置，
 			//就只能调用parentBeanFactory的getBean方法去加载bean了
+			// **如果对spring没有进行改造，这里默认 parentBeanFactory为空**
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
 				String nameToLookup = originalBeanName(name);
@@ -399,13 +405,18 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 
+			// typeCheckOnly，用于判断在调用 getBean 方法时，是否仅是做类型检查，
+			// 如果不是只做类型检查，而是在创建bean的过程中则会调用 markBeanAsCreated 进行记录
 			if (!typeCheckOnly) {
+				// typeCheckOnly为false，添加到alreadyCreated Set集合当中，表示它已经创建过
+				// 防止重复创建
 				markBeanAsCreated(beanName);
 			}
 
 			StartupStep beanCreation = this.applicationStartup.start("spring.beans.instantiate")
 					.tag("beanName", name);
 			//3、手动加载bean
+			// 重点部分，创建singleton的bean，或创建新的prototype的bean
 			try {
 				if (requiredType != null) {
 					beanCreation.tag("beanType", requiredType::toString);
@@ -415,7 +426,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
 
-				//检查是否有depends on
+				//检查当前bean是否有依赖，这里指的是使用depends-on的情况，需要先实例化依赖bean
 				// Guarantee initialization of beans that the current bean depends on.
 				String[] dependsOn = mbd.getDependsOn();
 				// 如果存在依赖则需要定义实例化依赖的bean
@@ -425,9 +436,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						// 注册依赖关系
 						registerDependentBean(dep, beanName);
 						try {
-							//递归调用getBean
+							// 初始化被依赖bean，递归调用getBean
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {
@@ -437,6 +449,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 				}
 
+				// 在这才真正创建bean的实例
 				//实例化当前bean的所有依赖后便会实例化mbd本身了
 				//下面是根据不同的scope类型来创建mbd
 				//单例模式创建Bean
@@ -460,7 +473,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
-				//原型模式
+				//原型模式,创建 prototype 的实例
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
@@ -474,7 +487,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					beanInstance = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
 
-				//其余模式
+				//其余模式,如果不是singleto和prototype,委托给相应的实现类来处理
 				else {
 					String scopeName = mbd.getScope();
 					if (!StringUtils.hasLength(scopeName)) {
@@ -2312,12 +2325,36 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	static class BeanPostProcessorCache {
 
+		/**
+		 * 默认情况下，beanPostProcessors会有7个实例，分别为：
+		 * （1）org.springframework.context.annotation.AnnotationConfigApplicationContext
+		 * （2）org.springframework.context.annotation.
+		 * （3）org.springframework.context.support.PostProcessorRegistrationDelegate.BeanPostProcessorChecker
+		 * （4）org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator
+		 * （5）org.springframework.context.annotation.CommonAnnotationBeanPostProcessor
+		 * （6）org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor
+		 * （7）org.springframework.context.support.ApplicationListenerDetector
+		 *
+		 * 并且按照不同BeanPostProcessor作用，分为四类，也就是BeanPostProcessorCache中的四个分组
+		 */
+
+		// ConfigurationClassPostProcessor$ImportAwareBeanPostProcessor
+		// AnnotationAwareAspectJAutoProxyCreator
+		// CommonAnnotationBeanPostProcessor
+		// AutowiredAnnotationBeanPostProcessor
 		final List<InstantiationAwareBeanPostProcessor> instantiationAware = new ArrayList<>();
 
+		// AnnotationAwareAspectJAutoProxyCreator
+		// AutowiredAnnotationBeanPostProcessor
 		final List<SmartInstantiationAwareBeanPostProcessor> smartInstantiationAware = new ArrayList<>();
 
+		// CommonAnnotationBeanPostProcessor
+		// ApplicationListenerDetector
 		final List<DestructionAwareBeanPostProcessor> destructionAware = new ArrayList<>();
 
+		// CommonAnnotationBeanPostProcessor
+		// AutowiredAnnotationBeanPostProcessor
+		// ApplicationListenerDetector
 		final List<MergedBeanDefinitionPostProcessor> mergedDefinition = new ArrayList<>();
 	}
 

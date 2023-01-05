@@ -68,6 +68,21 @@ import org.springframework.util.StringUtils;
  * @see org.springframework.beans.factory.DisposableBean
  * @see org.springframework.beans.factory.config.ConfigurableBeanFactory
  */
+
+/**
+ * DefaultSingletonBeanRegistry 类实现了SingletonBeanRegistry接口
+ * DefaultSingletonBeanRegistry是一个通用的存储共享bean实例的地方，通过bean的名字获得bean。同时，它也给提供一次性bean的注册功能。
+ * 这个类的主要作用是，给BeanFactory的实现，提供基本的管理 singleton bean 实例功能。
+ *
+ * 主要存储对象有三个分别存储:
+ *   (1) singletonObjects  主要的存储单例对象集合
+ *   (2) singletonFactories 存储创建单例对象的工厂对象
+ *   (3) earlySingletonObjects 存储singletonObject 没有的由singletonFactory 创建出来的单例对象
+ * 主要有包含bean的三个关联关系
+ *   (1)containedBeanMap  存储beanName 与其包含其beanName的列表  beanName的包含关系
+ *   (2)dependentBeanMap   存储beanName 与其被依赖beanName的列表  beanName的被依赖关系
+ *   (3)dependenciesForBeanMap    存储beanName 与其依赖beanName的列表  beanName的依赖关系
+ */
 public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements SingletonBeanRegistry {
 
 	/** Maximum number of suppressed exceptions to preserve. */
@@ -92,30 +107,44 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/** Set of registered singletons, containing the bean names in registration order. */
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
+	// 目前正在创建中的单例bean的名称的集合
 	/** Names of beans that are currently in creation. */
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
+	// 目前需要排除的单例bean的名称的集合
 	/** Names of beans currently excluded from in creation checks. */
 	private final Set<String> inCreationCheckExclusions =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
+	//存放该类异常集合
 	/** Collection of suppressed Exceptions, available for associating related causes. */
 	@Nullable
 	private Set<Exception> suppressedExceptions;
 
+	// 是否销毁标识
 	/** Flag that indicates whether we're currently within destroySingletons. */
 	private boolean singletonsCurrentlyInDestruction = false;
 
+	// 一次性的可以丢弃的实例对象集合
 	/** Disposable bean instances: bean name to disposable instance. */
 	private final Map<String, Object> disposableBeans = new LinkedHashMap<>();
 
+	/**
+	 * 各个SingletonObject之间的关系也是由几个map对象维护（containedBeanMap，dependentBeanMap，dependenciesForBeanMap）。
+	 * containedBeanMap和dependentBeanMap两者维护的关系一致  key被value列表包含  value列表依赖key
+	 * dependenciesForBeanMap又与上面的containedBeanMap和dependentBeanMap两者 相反
+	 *   举例 dependentBeanMap A————>[B,C,D,E]  则dependenciesForBeanMap 包含关系为 B->[A] C->[A] D->[A] E->[A]
+	 **/
+	// 保存所有单例对象的包含关系，map结构，key为被包含的bean的名称，value为包含该key对应的bean对象的所有bean集合
 	/** Map between containing bean names: bean name to Set of bean names that the bean contains. */
 	private final Map<String, Set<String>> containedBeanMap = new ConcurrentHashMap<>(16);
 
+	// 被依赖关系:key对应的bean被value中的bean依赖，也就是说value中的bean销毁完 ，key 对应的 bean 才能开始销毁
 	/** Map between dependent bean names: bean name to Set of dependent bean names. */
 	private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
 
+	// 依赖关系:key对应的bean依赖了value中的bean，也就是说key对应的bean销毁完，value中的bean才能销毁
 	/** Map between depending bean names: bean name to Set of bean names for the bean's dependencies. */
 	private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
 
