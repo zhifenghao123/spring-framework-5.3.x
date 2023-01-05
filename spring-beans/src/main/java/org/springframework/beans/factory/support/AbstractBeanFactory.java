@@ -405,6 +405,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 
+			// typeCheckOnly，用于判断在调用 getBean 方法时，是否仅是做类型检查，
+			// 如果不是只做类型检查，而是在创建bean的过程中则会调用 markBeanAsCreated 进行记录
 			if (!typeCheckOnly) {
 				// typeCheckOnly为false，添加到alreadyCreated Set集合当中，表示它已经创建过
 				// 防止重复创建
