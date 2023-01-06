@@ -575,21 +575,37 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #instantiateUsingFactoryMethod
 	 * @see #autowireConstructor
 	 */
+
+	/**
+	 * 1、如果是单例则需要首先清除缓存
+	 * 2、实例化 Bean，有四种方式：工厂方法，Supplier 回调、有参构造函数自动注入、默认构造函数注入
+	 * 3、寻找注入点,MergedBeanDefinitionPostProcessor 的使用
+	 * 4、单例模式下的依赖处理
+	 * 5、属性填充，将所有属性填充至 bean 的实例中
+	 * 6、执行初始化方法
+	 * 7、循环依赖检查，存在循环依赖则抛出异常
+	 * 8、注册 DisposableBean
+	 */
 	protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
 			throws BeanCreationException {
 
 		// Instantiate the bean.
 		BeanWrapper instanceWrapper = null;
+		//1、如果是单例，移除缓存
 		if (mbd.isSingleton()) {
+			// factoryBeanObjectCache：存的是beanName对应的FactoryBean.getObject()所返回的对象
+			// factoryBeanInstanceCache：存的是beanName对应的FactoryBean实例对象
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
+		// 2、实例化
 		if (instanceWrapper == null) {
 			/**
 			 * 创建 bean 实例，并将实例包裹在 BeanWrapper 实现类对象中返回。
-			 * createBeanInstance中包含三种创建 bean 实例的方式：
-			 *   1. 通过工厂方法创建 bean 实例
-			 *   2. 通过构造方法自动注入（autowire by constructor）的方式创建 bean 实例
-			 *   3. 通过无参构造方法方法创建 bean 实例
+			 * createBeanInstance中包含四种创建 bean 实例的方式：
+			 *   1. Supplier 回调
+			 *   2. 通过工厂方法创建 bean 实例
+			 *   3. 通过构造方法自动注入（autowire by constructor）的方式创建 bean 实例
+			 *   4. 通过默认构造函数（无参构造方法）创建 bean 实例
 			 *
 			 * 若 bean 的配置信息中配置了 lookup-method 和 replace-method，则会使用 CGLIB
 			 * 增强 bean 实例。
@@ -597,17 +613,23 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 实例化对象，里面第二次调用后置处理器
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
+		// 包装的实例对象，也就是原始对象
 		Object bean = instanceWrapper.getWrappedInstance();
+		// 包装的实例对象的类型
 		Class<?> beanType = instanceWrapper.getWrappedClass();
+		// 如果不是NullBean，则将resolvedTargetType 属性设置为当前的WrappedClass
 		if (beanType != NullBean.class) {
 			mbd.resolvedTargetType = beanType;
 		}
 
+		// 3、寻找注入点
 		// Allow post-processors to modify the merged bean definition.
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
 					// 第三次调用后置处理器
+					// 这里会查找@Autowired、@Value、Resource的注入点(InjectedElement)，
+					// 并把这些注入点添加到mbd的属性externallyManagedConfigMembers中
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
 				catch (Throwable ex) {
@@ -618,7 +640,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
-		// 判断是否允许循环依赖
+		// 4、判断是否允许循环依赖
+		// 如果当前bean是单例并且支持循环依赖，且当前bean正在创建，就通过往singletonFactories(三级缓存)添加一个objectFactory，
+		// 这样后期如果有其他bean依赖该bean 可以从singletonFactories获取到bean， 解决循环依赖
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
@@ -629,16 +653,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 						"' to allow for resolving potential circular references");
 			}
 			// 第四次调用后置处理器，判断是否需要AOP
+			// 构造一个 ObjectFactory 添加到singletonFactories中
+			// getEarlyBeanReference()可以对 返回的bean进行修改，目前除了可能会返回动态代理对象（aop），其他的都是直接返回bean
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
-			// 填充属性，即属性的自动注入
+			// 5、填充属性，即属性的自动注入
 			// 里面完成第五次和第六次后置处理器的调用
 			populateBean(beanName, mbd, instanceWrapper);
-			// 初始化Spring
+			// 6、执行初始化方法，初始化Spring
 			// 里面会进行第七次和第八次后置处理器的调用
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
@@ -652,12 +678,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		// 7、检测循环依赖
 		if (earlySingletonExposure) {
+			// earlySingletonReference 只有在检测到有循环依赖的情况下才会不为空
 			Object earlySingletonReference = getSingleton(beanName, false);
 			if (earlySingletonReference != null) {
+				// 如果提前暴露的对象(bean)和经过了完整的生命周期后的对象相等(exposedObject)，则把缓存中的
+				// earlySingletonReference赋值给exposedObject，最终会添加到singletonObjects中去
+				// (初始化之后的bean等于原始的bean，说明不是proxy）
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
+				//检测该bean的dependon的bean是否都已经初始化好了
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
 					String[] dependentBeans = getDependentBeans(beanName);
 					Set<String> actualDependentBeans = new LinkedHashSet<>(dependentBeans.length);
@@ -666,6 +698,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							actualDependentBeans.add(dependentBean);
 						}
 					}
+					/*
+					 * 因为 bean 创建后，其所依赖的 bean 一定是创建了的。
+					 * actualDependentBeans 不为空，表示当 bean 创建后依赖的 bean 没有全部创建完，也就是说存在循环依赖
+					 */
 					if (!actualDependentBeans.isEmpty()) {
 						throw new BeanCurrentlyInCreationException(beanName,
 								"Bean with name '" + beanName + "' has been injected into other beans [" +
@@ -679,6 +715,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		// 8、注册DisposableBean
 		// Register bean as disposable.
 		try {
 			registerDisposableBeanIfNecessary(beanName, bean, mbd);
