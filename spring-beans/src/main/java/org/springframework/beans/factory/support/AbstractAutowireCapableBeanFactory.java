@@ -1250,51 +1250,76 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #autowireConstructor
 	 * @see #instantiateBean
 	 */
+	/**
+	 * 1、如果存在 Supplier 回调，则调用 obtainFromSupplier() 进行初始化
+	 * 2、如果存在工厂方法，则使用 instantiateUsingFactoryMethod() 进行初始化
+	 * 3、判断 resolvedConstructorOrFactoryMethod是否不为空，如果不为空，则存在缓存，直接使用已经解析了的。然后根据 autowireNecessary
+	 * 参数来判断是使用有参构造函数自动注入还是使用默认构造函数注入。
+	 * 4、如果缓存中没有，则需要明确使用哪个构造函数来完成解析工作，因为一个类可以有多个构造函数，每个构造函数都有不同的构造参数，
+	 * 所以需要根据参数来锁定构造函数并完成初始化。如果存在参数则使用相应的带有参数的构造函数，否则使用默认构造函数。
+	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+		// 得到bean的class，使用类加载器根据设置的 class 属性或者根据 className 来解析 Class
 		// Make sure bean class is actually resolved at this point.
 		Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
+		// 如果beanClass不是public 且不允许访问非public方法和属性则抛出异常
 		if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
 			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 					"Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
 		}
 
+		// 这是Spring提供给开发者的扩展点
+		// 当一个BeanDefinition中存在一个Supplier类的时候, Spring就利用这个类的get方法来获取实例
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 
+		// 通过factoryMethod实例化这个bean
+		// factorMethod这个名称在xml中还是比较常见的, 即通过工厂方法来创建bean对象
+		// 如果一个bean对象是由@Bean注解创建的, 也会走instantiateUsingFactoryMethod方法来创建
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 
+		// 重新创建相同bean时的快捷方式
 		// Shortcut when re-creating the same bean...
 		boolean resolved = false;
 		boolean autowireNecessary = false;
+		// 当作用域为原型、多次调用getBean()时，不传入参数，从缓存中获取，这段逻辑才会被执行
+		// 如果是单例，第二次调用 getBean()，直接从单例池获取对象了，根本就不会走到这里
 		if (args == null) {
 			synchronized (mbd.constructorArgumentLock) {
+				// resolvedConstructorOrFactoryMethod 缓存了已解析的构造函数或工厂方法
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+					// resolved为true，表示当前bean的构造方法已经确定了，也代表该Bean之前被解析过
 					resolved = true;
+					// constructorArgumentsResolved：将构造函数参数标记为已解析，true就是标记为了已解析，默认为 false。
+					// 如果autowireNecessary为true说明是采用有参构造函数注入
 					autowireNecessary = mbd.constructorArgumentsResolved;
 				}
 			}
 		}
 		if (resolved) {
+			// resolved为true，表示当前bean的构造方法已经确定了，也代表该Bean之前被解析过
+			// autowireNecessary表示采用有参构造函数注入
 			if (autowireNecessary) {
+				// 采用有参构造函数注入
 				return autowireConstructor(beanName, mbd, null, null);
 			}
 			else {
+				// 如果构造方法已经确定了，但是没有确定构造方法参数，那就表示没有构造方法参数，用无参的构造方法来实例化bean
 				return instantiateBean(beanName, mbd);
 			}
 		}
 
 		/*  spring 通过构造方法实例化 bean，首先要推断构造方法，这个分两种类型
 		  1、手动注入
-             会在后置处理器中 找到实现 SmartInstantiationAwareBeanPostProcessor接口的类型
-             AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出
-             合适的构造方法创建对象
+             会在后置处理器中 找到并根据 SmartInstantiationAwareBeanPostProcessor接口的实现类获取构造函数，具体实现
+             在AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出合适的构造方法创建对象
 		     1.1、只有一个无参构造方法 ctors为 null 使用默认无参构造方法
-		     1.2 如果有多个构造方法 ctors为 null 使用默认无参构造方法
+		     1.2、如果有多个构造方法 ctors为 null 使用默认无参构造方法
 		     1.3  如果只有一个有参构造方法 ctors不为null 因为只有一个有参数的 只能用这个了
 		     1.4、多个构造方法 且只有一个构造方法加了@Autowired(required = true) 用这个构造方法来创建对象
 		     1.5、多个构造方法 且多个构造方法加了@Autowired(required = true)  spring ioc容器报错
@@ -1304,6 +1329,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 */
 		// Candidate constructors for autowiring?
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		// 通过BeanPostProcessor找出了构造方法
+		// 或者BeanDefinition的autowire属性为AUTOWIRE_CONSTRUCTOR xml中使用了 autowire="constructor"
+		// 或者BeanDefinition中指定了构造方法参数值 使用了 <constructor-arg>标签
+		// 或者在getBean()时指定了args
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
 			//使用容器的自动装配特性，调用匹配的构造方法实例化
