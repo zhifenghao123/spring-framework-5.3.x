@@ -1419,6 +1419,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeansException {
 
 		if (beanClass != null && hasInstantiationAwareBeanPostProcessors()) {
+			// SmartInstantiationAwareBeanPostProcessor接口默认没有对该方法进行实现。
+			// 具体实现过程交给实现类实现。SmartInstantiationAwareBeanPostProcessor 接口下有三个实现类，分别是
+			// AbstractAutoProxyCreator、InstantiationAwareBeanPostProcessorAdapter、AutowiredAnnotationBeanPostProcessor。
+			// 前两个类对determineCandidateConstructors方法是空实现，只有在AutowiredAnnotationBeanPostProcessor 实现类中
+			// 才有具体的实现过程。
 			for (SmartInstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().smartInstantiationAware) {
 				Constructor<?>[] ctors = bp.determineCandidateConstructors(beanClass, beanName);
 				if (ctors != null) {
