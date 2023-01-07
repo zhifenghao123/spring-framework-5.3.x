@@ -1287,10 +1287,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Shortcut when re-creating the same bean...
 		boolean resolved = false;
 		boolean autowireNecessary = false;
-		// 当作用域为原型、多次调用getBean()时，不传入参数，从缓存中获取，这段逻辑才会被执行
-		// 如果是单例，第二次调用 getBean()，直接从单例池获取对象了，根本就不会走到这里
+		//调用getBean()时不传入参数
 		if (args == null) {
 			synchronized (mbd.constructorArgumentLock) {
+				// 当作用域为原型、多次调用getBean()时，不传入参数，从缓存中获取，这段逻辑才会被执行
+				// 如果是单例，第二次调用 getBean()，直接从单例池获取对象了，根本就不会走到这里
 				// resolvedConstructorOrFactoryMethod 缓存了已解析的构造函数或工厂方法
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
 					// resolved为true，表示当前bean的构造方法已经确定了，也代表该Bean之前被解析过
