@@ -937,6 +937,8 @@ class ConstructorResolver {
 	/**
 	 * Create an array of arguments to invoke a constructor or factory method,
 	 * given the resolved constructor argument values.
+	 * 根据当前构造方法的参数类型、参数名称与上面解析得到的构造方法参数值进行匹配，如果匹配成功返回构造方法的参数值，进行类型转换。
+	 * 然后将必要的属性进行赋值，最后进行返回。
 	 */
 	private ArgumentsHolder createArgumentArray(
 			String beanName, RootBeanDefinition mbd, @Nullable ConstructorArgumentValues resolvedValues,
@@ -946,24 +948,35 @@ class ConstructorResolver {
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
 
+		// 根据参数类型的个数初始化出来对应的ArgumentsHolder
 		ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);
 		Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
 
+		// 循环执行
 		for (int paramIndex = 0; paramIndex < paramTypes.length; paramIndex++) {
+			// 获得参数类型
 			Class<?> paramType = paramTypes[paramIndex];
+			// 获得参数名称
 			String paramName = (paramNames != null ? paramNames[paramIndex] : "");
+			// 尝试查找匹配的构造函数参数值，无论是索引的还是通用的
 			// Try to find matching constructor argument value, either indexed or generic.
 			ConstructorArgumentValues.ValueHolder valueHolder = null;
+			// 如果指定了构造方法参数值，那么则看当前paramType有没有对应的值
 			if (resolvedValues != null) {
+				// 拿到第paramIndex位置的构造方法参数值，会根据传进去的类型、名称进行匹配，如果类型、名称不相等则返回null
 				valueHolder = resolvedValues.getArgumentValue(paramIndex, paramType, paramName, usedValueHolders);
 				// If we couldn't find a direct match and are not supposed to autowire,
 				// let's try the next generic, untyped argument value as fallback:
 				// it could match after type conversion (for example, String -> int).
+				// 如果找不到直接匹配项，尝试一个通用的，无类型的参数值作为后备，
+				// 类型转换后可以匹配（例如，String-> int）。
 				if (valueHolder == null && (!autowiring || paramTypes.length == resolvedValues.getArgumentCount())) {
 					valueHolder = resolvedValues.getGenericArgumentValue(null, null, usedValueHolders);
 				}
 			}
+			// 如果找到了对应的值，则进行类型转化，把转化前的值存在args.rawArguments中
+			// 转化后的值存在args.arguments中
 			if (valueHolder != null) {
 				// We found a potential match - let's give it a try.
 				// Do not consider the same value definition multiple times!
@@ -975,8 +988,10 @@ class ConstructorResolver {
 					args.preparedArguments[paramIndex] = convertedValue;
 				}
 				else {
+					// 为给定的方法或构造函数创建一个新的MethodParameter。
 					MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 					try {
+						//进行类型转换
 						convertedValue = converter.convertIfNecessary(originalValue, paramType, methodParam);
 					}
 					catch (TypeMismatchException ex) {
@@ -989,6 +1004,10 @@ class ConstructorResolver {
 					Object sourceHolder = valueHolder.getSource();
 					if (sourceHolder instanceof ConstructorArgumentValues.ValueHolder) {
 						Object sourceValue = ((ConstructorArgumentValues.ValueHolder) sourceHolder).getValue();
+						// 将 resolveNecessary 变量赋值为 true，该变量会影响
+						// resolvedConstructorArguments:缓存完全解析的构造函数参数
+						// preparedConstructorArguments:缓存部分准备好的构造函数参数
+						// 这两个参数是谁为 null 值
 						args.resolveNecessary = true;
 						args.preparedArguments[paramIndex] = sourceValue;
 					}
@@ -997,6 +1016,8 @@ class ConstructorResolver {
 				args.rawArguments[paramIndex] = originalValue;
 			}
 			else {
+				// 如果上述逻辑，没有找到对应的值。举例中的举例一 就会走该代码分支
+				// 为给定的方法或构造函数创建一个新的MethodParameter。
 				MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 				// No explicit match found: we're either supposed to autowire or
 				// have to fail creating an argument array for the given constructor.
@@ -1006,12 +1027,21 @@ class ConstructorResolver {
 							"Ambiguous argument values for parameter of type [" + paramType.getName() +
 							"] - did you specify the correct bean references as arguments?");
 				}
+				// 如果 autowiring 的值为 true，也就是如果入参 chosenCtors不为null,也就是找到了构造方法
+				// 或者autowireMode是构造方法自动注入，则可能要自动选择构造方法
+				// boolean autowiring = (chosenCtors != null ||
+				//         mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 				try {
+					// 该方法内部会调用 resolveDependency 方法,得到一个bean,resolveDependency 方法很重要。
 					Object autowiredArgument = resolveAutowiredArgument(
 							methodParam, beanName, autowiredBeanNames, converter, fallback);
 					args.rawArguments[paramIndex] = autowiredArgument;
 					args.arguments[paramIndex] = autowiredArgument;
 					args.preparedArguments[paramIndex] = autowiredArgumentMarker;
+					// 将 resolveNecessary 变量赋值为 true，该变量会影响
+					// resolvedConstructorArguments:缓存完全解析的构造函数参数
+					// preparedConstructorArguments:缓存部分准备好的构造函数参数
+					// 这两个参数是否为 null
 					args.resolveNecessary = true;
 				}
 				catch (BeansException ex) {
@@ -1030,6 +1060,7 @@ class ConstructorResolver {
 			}
 		}
 
+		// 最后，返回找到的值
 		return args;
 	}
 
