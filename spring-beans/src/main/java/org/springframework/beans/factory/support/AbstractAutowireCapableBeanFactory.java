@@ -1319,6 +1319,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		  1、手动注入
              会在后置处理器中 找到并根据 SmartInstantiationAwareBeanPostProcessor接口的实现类获取构造函数，具体实现
              在AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出合适的构造方法创建对象
+             （其余两个SmartInstantiationAwareBeanPostProcessor的实现类是空实现）
 		     1.1、只有一个无参构造方法 ctors为 null 使用默认无参构造方法
 		     1.2、如果有多个构造方法 ctors为 null 使用默认无参构造方法
 		     1.3  如果只有一个有参构造方法 ctors不为null 因为只有一个有参数的 只能用这个了
