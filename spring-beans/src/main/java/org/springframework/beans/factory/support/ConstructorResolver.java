@@ -867,17 +867,25 @@ class ConstructorResolver {
 	 * Resolve the constructor arguments for this bean into the resolvedValues object.
 	 * This may involve looking up other beans.
 	 * <p>This method is also used for handling invocations of static factory methods.
+	 *
+	 * 首先获得当前 Bean 的 constructor-arg 标签的个数 minNrOfArgs ，然后遍历 cargs 中的 indexedArgumentValues 元素，
+	 * 获取每个对象的key(也就是constructor-arg标签的index元素)，与 minNrOfArgs 进行比较。顺便将 key 和 value 添加到 resolvedValues 对象中。
 	 */
 	private int resolveConstructorArguments(String beanName, RootBeanDefinition mbd, BeanWrapper bw,
 			ConstructorArgumentValues cargs, ConstructorArgumentValues resolvedValues) {
 
+		// 获得当前 beanFatory 类型转换器
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
+		// 获得当前 beanFatory 类型转换器为 null，则使用 bw，bw 实现了 TypeConverter
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
+		//为给定的BeanFactory和BeanDefinition创建一个BeanDefinitionValueResolver
 		BeanDefinitionValueResolver valueResolver =
 				new BeanDefinitionValueResolver(this.beanFactory, beanName, mbd, converter);
 
+		// 获得 constructor-arg 标签的个数
 		int minNrOfArgs = cargs.getArgumentCount();
 
+		// 先遍历 args 中的indexedArgumentValues，indexedArgumentValues存的是某个index对应的构造方法参数值
 		for (Map.Entry<Integer, ConstructorArgumentValues.ValueHolder> entry : cargs.getIndexedArgumentValues().entrySet()) {
 			int index = entry.getKey();
 			if (index < 0) {
@@ -887,20 +895,28 @@ class ConstructorResolver {
 			if (index + 1 > minNrOfArgs) {
 				minNrOfArgs = index + 1;
 			}
+			// 获得构造方法参数值
 			ConstructorArgumentValues.ValueHolder valueHolder = entry.getValue();
 			if (valueHolder.isConverted()) {
+				// 把该数据添加到 resolvedValues 对象中
 				resolvedValues.addIndexedArgumentValue(index, valueHolder);
 			}
 			else {
+				// 把“值”转化为对应的类型
+				// 获得 constructor-arg 的 value
+				// resolveValueIfNecessary：这里可能会创建bean 因为 constructor-arg 里面有个 ref 属性，可以引用其他bean。
 				Object resolvedValue =
 						valueResolver.resolveValueIfNecessary("constructor argument", valueHolder.getValue());
 				ConstructorArgumentValues.ValueHolder resolvedValueHolder =
 						new ConstructorArgumentValues.ValueHolder(resolvedValue, valueHolder.getType(), valueHolder.getName());
 				resolvedValueHolder.setSource(valueHolder);
+				// 把该数据添加到 resolvedValues 对象中
 				resolvedValues.addIndexedArgumentValue(index, resolvedValueHolder);
 			}
 		}
 
+		// 把genericArgumentValues中的值进行类型转化然后添加到resolvedValues中去
+		// 和上述循环逻辑差不多
 		for (ConstructorArgumentValues.ValueHolder valueHolder : cargs.getGenericArgumentValues()) {
 			if (valueHolder.isConverted()) {
 				resolvedValues.addGenericArgumentValue(valueHolder);
