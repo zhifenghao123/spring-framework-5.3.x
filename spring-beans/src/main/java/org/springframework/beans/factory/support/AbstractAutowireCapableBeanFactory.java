@@ -1183,6 +1183,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see MergedBeanDefinitionPostProcessor#postProcessMergedBeanDefinition
 	 */
 	protected void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
+		/**
+		 * MergedBeanDefinitionPostProcessor接口的实现类分别有以下实现：
+		 * AutowiredAnnotationBeanPostProcessor：解析Autowired、Value、Inject注解。
+		 * ScheduledAnnotationBeanPostProcessor：解析 Scheduled注解。
+		 * InitDestroyAnnotationBeanPostProcessor：解析PreDestroy、PostConstruct注解。
+		 * JmsListenerAnnotationBeanPostProcessor：解析JmsListener注解。
+		 * PersistenceAnnotationBeanPostProcessor：解析@PersistenceUnit和@PersistenceContext注解。
+		 * CommonAnnotationBeanPostProcessor：解析@Resource、@WebServiceRef、@EJB注解。并且该类继承了
+		 * InitDestroyAnnotationBeanPostProcessor。
+		 */
 		for (MergedBeanDefinitionPostProcessor processor : getBeanPostProcessorCache().mergedDefinition) {
 			processor.postProcessMergedBeanDefinition(mbd, beanType, beanName);
 		}
