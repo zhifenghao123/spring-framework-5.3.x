@@ -389,65 +389,94 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
 
+			//遍历所有字段属性，看是否有@WebServiceRef，@EJB，@Resource注解
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
+				//当前属性上包含 @WebServiceRef 注解
 				if (webServiceRefClass != null && field.isAnnotationPresent(webServiceRefClass)) {
+					//是否是静态属性 如果是抛出异常
 					if (Modifier.isStatic(field.getModifiers())) {
 						throw new IllegalStateException("@WebServiceRef annotation is not supported on static fields");
 					}
+					//构建一个 WebServiceRefElement 对象添加到集合中
 					currElements.add(new WebServiceRefElement(field, field, null));
 				}
+				//当前属性上包含 @EJB 注解
 				else if (ejbClass != null && field.isAnnotationPresent(ejbClass)) {
+					//是否是静态属性 如果是抛出异常
 					if (Modifier.isStatic(field.getModifiers())) {
 						throw new IllegalStateException("@EJB annotation is not supported on static fields");
 					}
+					//构建一个 EjbRefElement 对象添加到集合中
 					currElements.add(new EjbRefElement(field, field, null));
 				}
+				//当前属性上包含 @Resource 注解
 				else if (field.isAnnotationPresent(Resource.class)) {
+					//是否是静态属性 如果是抛出异常
 					if (Modifier.isStatic(field.getModifiers())) {
 						throw new IllegalStateException("@Resource annotation is not supported on static fields");
 					}
+					//当前属性类型的名称不能包含 javax.xml.ws.WebServiceContext
+					//也就是说你不能使用以下写法：
+					//@Resource
+					//private WebServiceContext wsContext;
 					if (!this.ignoredResourceTypes.contains(field.getType().getName())) {
+						//构建一个 ResourceElement 对象添加到集合中
 						currElements.add(new ResourceElement(field, field, null));
 					}
 				}
 			});
 
+			//遍历当前类所有方法，看是否有@WebServiceRef，@EJB，@Resource注解
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
 					return;
 				}
 				if (method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
+					//当前方法上包含 @WebServiceRef 注解
 					if (webServiceRefClass != null && bridgedMethod.isAnnotationPresent(webServiceRefClass)) {
+						// 如果静态方法则抛出异常
 						if (Modifier.isStatic(method.getModifiers())) {
 							throw new IllegalStateException("@WebServiceRef annotation is not supported on static methods");
 						}
+						// 方法参数个数只能是一个，否则抛出异常
 						if (method.getParameterCount() != 1) {
 							throw new IllegalStateException("@WebServiceRef annotation requires a single-arg method: " + method);
 						}
 						PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
+						// 构建 WebServiceRefElement 对象 添加到 currElements 集合中
 						currElements.add(new WebServiceRefElement(method, bridgedMethod, pd));
 					}
+					//当前方法上包含 @EJB 注解
 					else if (ejbClass != null && bridgedMethod.isAnnotationPresent(ejbClass)) {
+						// 如果静态方法则抛出异常
 						if (Modifier.isStatic(method.getModifiers())) {
 							throw new IllegalStateException("@EJB annotation is not supported on static methods");
 						}
+						// 方法参数个数只能是一个，否则抛出异常
 						if (method.getParameterCount() != 1) {
 							throw new IllegalStateException("@EJB annotation requires a single-arg method: " + method);
 						}
 						PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
+						//构建 EjbRefElement 对象 添加到 currElements 集合中
 						currElements.add(new EjbRefElement(method, bridgedMethod, pd));
 					}
+					//当前方法上包含 @Resource 注解
 					else if (bridgedMethod.isAnnotationPresent(Resource.class)) {
+						// 如果静态方法则抛出异常
 						if (Modifier.isStatic(method.getModifiers())) {
 							throw new IllegalStateException("@Resource annotation is not supported on static methods");
 						}
+						//获得参数的类型
 						Class<?>[] paramTypes = method.getParameterTypes();
+						// 参数类型长度只能是 1，也就是方法参数个数只能是一个，否则抛出异常
 						if (paramTypes.length != 1) {
 							throw new IllegalStateException("@Resource annotation requires a single-arg method: " + method);
 						}
+						//当前方法参数类型的名称不能包含 javax.xml.ws.WebServiceContext
 						if (!this.ignoredResourceTypes.contains(paramTypes[0].getName())) {
 							PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
+							//构建 ResourceElement 对象 添加到 currElements 集合中
 							currElements.add(new ResourceElement(method, bridgedMethod, pd));
 						}
 					}
