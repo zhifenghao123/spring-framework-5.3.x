@@ -539,31 +539,54 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 		return metadata;
 	}
 
+	/**
+	 * buildAutowiringMetadata()方法的处理流程：
+	 * (1)、通过反射获取目标类中所有的字段，并遍历每一个字段，然后通过findAutowiredAnnotation()
+	 * 方法判断字段是否使用@Autowired和@Value修饰，如果字段被@Autowired和@Value修饰，则返回注解的相关属性信息；
+	 * (2)、通过反射获取目标类中所有的方法，跟前面处理字段的过程类似；
+	 * (3)、将每个字段或者方法解析到的元信息保存到List<InjectionMetadata.InjectedElement>
+	 *     elements集合中，字段对应的是AutowiredFieldElement类型，方法对应的则是AutowiredMethodElement类型，等待下一步的自动装配；
+	 * (4)、将目标类对应的所有自动注入相关的元信息封装成InjectionMetadata，然后返回；
+	 * buildAutowiringMetadata()方法执行完成后，会将解析得到的自动注入相关信息保存到缓存injectionMetadataCache中
+	 */
 	private InjectionMetadata buildAutowiringMetadata(Class<?> clazz) {
+		// 判断是不是候选者类，
+		// 1、先判断注解的全限名称是否以"java."开头，如果是则返回true，否则进行第二步(如果类名的全路径是 java.xx.xx，启动的时候就会报错的)
+		// 2、判断类的名称是否以"java."开头 或者 clazz的类型为 org.springframework.core.Ordered.class，如果是返回 false
 		if (!AnnotationUtils.isCandidateClass(clazz, this.autowiredAnnotationTypes)) {
 			return InjectionMetadata.EMPTY;
 		}
 
+		// 存放找到的元数据信息
 		List<InjectionMetadata.InjectedElement> elements = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
 
+			// 遍历属性，看是否有@Autowired，@Value，@Inject注解
+			// 通过反射获取目标类中所有的字段，并遍历每一个字段，然后通过findAutowiredAnnotation()方法判断字段是否使用@Autowired、
+			// @Inject和@Value修饰，如果字段被@Autowired、@Value和@Inject修饰，则返回注解的相关属性信息
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
+				// findAutowiredAnnotation(): 判断字段是否使用@Autowired，@Value，@Inject注解修饰，并返回相关属性
 				MergedAnnotation<?> ann = findAutowiredAnnotation(field);
+				// 如果存在@Autowired，@Value，@Inject注解其中一个
 				if (ann != null) {
+					// 如果字段是static的，则直接进行返回，不进行注入
 					if (Modifier.isStatic(field.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static fields: " + field);
 						}
 						return;
 					}
+					// 是否required
 					boolean required = determineRequiredStatus(ann);
+					// 生成一个注入点AutowiredFieldElement
 					currElements.add(new AutowiredFieldElement(field, required));
 				}
 			});
 
+			// 前面是通过反射获取目标类中所有的字段，这里是通过反射获取目标类中所有的方法，看是否有@Autowired，@Value，@Inject注解
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
@@ -571,12 +594,14 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 				MergedAnnotation<?> ann = findAutowiredAnnotation(bridgedMethod);
 				if (ann != null && method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
+					// 静态方法不能用来注入属性
 					if (Modifier.isStatic(method.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static methods: " + method);
 						}
 						return;
 					}
+					// 方法参数个数为0，打印日志提示
 					if (method.getParameterCount() == 0) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation should only be used on methods with parameters: " +
@@ -584,16 +609,23 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 						}
 					}
 					boolean required = determineRequiredStatus(ann);
+					// 根据方法找出对应的属性描述 可能为 null
 					PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
 					currElements.add(new AutowiredMethodElement(method, required, pd));
 				}
 			});
 
+			// 所有能够注入的属性集合
 			elements.addAll(0, currElements);
+			// 获得当前类的父类（当前类可能是一个代理类）
 			targetClass = targetClass.getSuperclass();
 		}
+		// 循环处理父类需要自动装配的元素。当前类不等于 null 并且当前类不是Object 则继续遍历
 		while (targetClass != null && targetClass != Object.class);
 
+		// 将目标类对应的所有自动注入相关的元信息封装成InjectionMetadata，然后合并到Bean定义中
+		// 包含所有带有@Autowired注解修饰的一个InjectionMetadata集合.
+		// 由两部分组成: 一是我们处理的目标类，二就是上述方法获取到的所以elements集合。
 		return InjectionMetadata.forElements(elements, clazz);
 	}
 
