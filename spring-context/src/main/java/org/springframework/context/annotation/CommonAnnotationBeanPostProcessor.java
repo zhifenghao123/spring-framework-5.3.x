@@ -142,6 +142,14 @@ import org.springframework.util.StringValueResolver;
  * @see org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor
  * @see org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor
  */
+/**
+ * 1、那么CommonAnnotationBeanPostProcessor这个Bean处理器是在什么时候装载到容器中呢？
+ *    在创建容器的时候，会创建所有的BeanPostProcessors Bean。
+ *    在创建CommonAnnotationBeanPostProcessor这个Bean的时候，就会调用对应的构造方法，设置对应的PostConstruct注解。
+ * 2、什么时候把CommonAnnotationBeanPostProcessor这个Bean的BeanDefinition加到BeanDefinition工厂中的呢？
+ *    在AnnotationConfigUtils#registerAnnotationConfigProcessors方法中，只有BeanDefinition工厂中又对应的BeanDefinition才会创建出Bean。
+ *
+ */
 @SuppressWarnings("serial")
 public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBeanPostProcessor
 		implements InstantiationAwareBeanPostProcessor, BeanFactoryAware, Serializable {
