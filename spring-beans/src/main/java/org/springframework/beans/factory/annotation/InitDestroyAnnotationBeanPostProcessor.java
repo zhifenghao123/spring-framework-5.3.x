@@ -218,12 +218,20 @@ public class InitDestroyAnnotationBeanPostProcessor
 		return metadata;
 	}
 
+	/**
+	 * 该方法主要是遍历bean对应的class以及父class中包含@PostConstruct、@PreDestroy注解的方法，构建出LifecycleMetadata对象。
+	 */
 	private LifecycleMetadata buildLifecycleMetadata(final Class<?> clazz) {
+		//判断是不是候选者,判断当前Bean是否包含@PostContruct,@PreDestroy，如果不包含，直接返回
+		// initAnnotationType 存的是 PostConstruct
+		// destroyAnnotationType 存的是 PreDestroy
 		if (!AnnotationUtils.isCandidateClass(clazz, Arrays.asList(this.initAnnotationType, this.destroyAnnotationType))) {
 			return this.emptyLifecycleMetadata;
 		}
 
+		// 初始化相关元数据
 		List<LifecycleElement> initMethods = new ArrayList<>();
+		// 销毁相关的元数据
 		List<LifecycleElement> destroyMethods = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
@@ -231,7 +239,9 @@ public class InitDestroyAnnotationBeanPostProcessor
 			final List<LifecycleElement> currInitMethods = new ArrayList<>();
 			final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
 
+			// 遍历类中的methods
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+				// 判断方法是有@PostConstruct注解
 				if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
 					LifecycleElement element = new LifecycleElement(method);
 					currInitMethods.add(element);
@@ -239,6 +249,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 						logger.trace("Found init method on class [" + clazz.getName() + "]: " + method);
 					}
 				}
+				// 判断方法是有@PreDestroy注解
 				if (this.destroyAnnotationType != null && method.isAnnotationPresent(this.destroyAnnotationType)) {
 					currDestroyMethods.add(new LifecycleElement(method));
 					if (logger.isTraceEnabled()) {
@@ -249,6 +260,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 			initMethods.addAll(0, currInitMethods);
 			destroyMethods.addAll(currDestroyMethods);
+			// 查找父类
 			targetClass = targetClass.getSuperclass();
 		}
 		while (targetClass != null && targetClass != Object.class);
