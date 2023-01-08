@@ -355,8 +355,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 
 	private InjectionMetadata findResourceMetadata(String beanName, Class<?> clazz, @Nullable PropertyValues pvs) {
+		// 如果当前 beanName 为null，那就选择class对象的名称
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
+		// 从缓存中获取
 		// Quick check on the concurrent map first, with minimal locking.
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
 		if (InjectionMetadata.needsRefresh(metadata, clazz)) {
@@ -367,6 +369,8 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 						metadata.clear(pvs);
 					}
 					metadata = buildResourceMetadata(clazz);
+					//将结果缓存起来
+					//injectionMetadataCache 是一个Map，key 为 beanName，value 为 InjectionMetadata 对象
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
 			}
