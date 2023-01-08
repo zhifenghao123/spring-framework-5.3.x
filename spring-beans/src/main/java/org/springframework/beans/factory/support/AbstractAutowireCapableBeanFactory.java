@@ -1183,6 +1183,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see MergedBeanDefinitionPostProcessor#postProcessMergedBeanDefinition
 	 */
 	protected void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
+		/**
+		 * MergedBeanDefinitionPostProcessor接口的实现类分别有以下实现：
+		 * AutowiredAnnotationBeanPostProcessor：解析Autowired、Value、Inject注解。
+		 * ScheduledAnnotationBeanPostProcessor：解析 Scheduled注解。
+		 * InitDestroyAnnotationBeanPostProcessor：解析PreDestroy、PostConstruct注解。
+		 * JmsListenerAnnotationBeanPostProcessor：解析JmsListener注解。
+		 * PersistenceAnnotationBeanPostProcessor：解析@PersistenceUnit和@PersistenceContext注解。
+		 * CommonAnnotationBeanPostProcessor：解析@Resource、@WebServiceRef、@EJB注解。并且该类继承了
+		 * InitDestroyAnnotationBeanPostProcessor。
+		 */
 		for (MergedBeanDefinitionPostProcessor processor : getBeanPostProcessorCache().mergedDefinition) {
 			processor.postProcessMergedBeanDefinition(mbd, beanType, beanName);
 		}
@@ -1287,10 +1297,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Shortcut when re-creating the same bean...
 		boolean resolved = false;
 		boolean autowireNecessary = false;
-		// 当作用域为原型、多次调用getBean()时，不传入参数，从缓存中获取，这段逻辑才会被执行
-		// 如果是单例，第二次调用 getBean()，直接从单例池获取对象了，根本就不会走到这里
+		//调用getBean()时不传入参数
 		if (args == null) {
 			synchronized (mbd.constructorArgumentLock) {
+				// 当作用域为原型、多次调用getBean()时，不传入参数，从缓存中获取，这段逻辑才会被执行
+				// 如果是单例，第二次调用 getBean()，直接从单例池获取对象了，根本就不会走到这里
 				// resolvedConstructorOrFactoryMethod 缓存了已解析的构造函数或工厂方法
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
 					// resolved为true，表示当前bean的构造方法已经确定了，也代表该Bean之前被解析过
@@ -1318,6 +1329,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		  1、手动注入
              会在后置处理器中 找到并根据 SmartInstantiationAwareBeanPostProcessor接口的实现类获取构造函数，具体实现
              在AutowiredAnnotationBeanPostProcessor类中的determineCandidateConstructors 方法来推断出合适的构造方法创建对象
+             （其余两个SmartInstantiationAwareBeanPostProcessor的实现类是空实现）
 		     1.1、只有一个无参构造方法 ctors为 null 使用默认无参构造方法
 		     1.2、如果有多个构造方法 ctors为 null 使用默认无参构造方法
 		     1.3  如果只有一个有参构造方法 ctors不为null 因为只有一个有参数的 只能用这个了
@@ -1412,11 +1424,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @throws org.springframework.beans.BeansException in case of errors
 	 * @see org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor#determineCandidateConstructors
 	 */
+	// 该方法的作用是：确定构造方法，在类中寻找被@Autowired标注的构造方法。
 	@Nullable
 	protected Constructor<?>[] determineConstructorsFromBeanPostProcessors(@Nullable Class<?> beanClass, String beanName)
 			throws BeansException {
 
 		if (beanClass != null && hasInstantiationAwareBeanPostProcessors()) {
+			// SmartInstantiationAwareBeanPostProcessor接口默认没有对该方法进行实现。
+			// 具体实现过程交给实现类实现。SmartInstantiationAwareBeanPostProcessor 接口下有三个实现类，分别是
+			// AbstractAutoProxyCreator、InstantiationAwareBeanPostProcessorAdapter、AutowiredAnnotationBeanPostProcessor。
+			// 前两个类对determineCandidateConstructors方法是空实现，只有在AutowiredAnnotationBeanPostProcessor 实现类中
+			// 才有具体的实现过程。
 			for (SmartInstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().smartInstantiationAware) {
 				Constructor<?>[] ctors = bp.determineCandidateConstructors(beanClass, beanName);
 				if (ctors != null) {

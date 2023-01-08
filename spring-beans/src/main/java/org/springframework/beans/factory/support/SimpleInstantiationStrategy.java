@@ -57,10 +57,23 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 	}
 
 
+	/**
+	 *
+	 * @param bd the bean definition
+	 * @param beanName the name of the bean when it is created in this context.
+	 * The name can be {@code null} if we are autowiring a bean which doesn't
+	 * belong to the factory.
+	 * @param owner the owning BeanFactory
+	 *
+	 * 如果该 Bean 没有配置 lookup-method、replaced-method 标签或者 @Lookup 注解，则直接通过反射的方式实例化 Bean 。
+	 * 如果配置了则需要使用 CGLIB 进行动态代理。
+	 */
 	@Override
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
+		// bd.hasMethodOverrides()：是否为此bean定义了方法重写，方法返回true说明重写了
 		// Don't override the class with CGLIB if no overrides.
 		if (!bd.hasMethodOverrides()) {
+			// 没有重写，直接使用反射实例化即可
 			Constructor<?> constructorToUse;
 			synchronized (bd.constructorArgumentLock) {
 				constructorToUse = (Constructor<?>) bd.resolvedConstructorOrFactoryMethod;
@@ -84,9 +97,12 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 					}
 				}
 			}
+			// 通过BeanUtils直接使用构造器对象实例化bean
 			return BeanUtils.instantiateClass(constructorToUse);
 		}
 		else {
+			// 重写了
+			// 生成CGLIB创建的子类对象
 			// Must generate CGLIB subclass.
 			return instantiateWithMethodInjection(bd, beanName, owner);
 		}
