@@ -197,6 +197,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 
 	private LifecycleMetadata findLifecycleMetadata(Class<?> clazz) {
+		//lifecycleMetadataCache属性是一个 Map clazz 为key  LifecycleMetadata 为值
 		if (this.lifecycleMetadataCache == null) {
 			// Happens after deserialization, during destruction...
 			return buildLifecycleMetadata(clazz);
@@ -208,6 +209,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 				metadata = this.lifecycleMetadataCache.get(clazz);
 				if (metadata == null) {
 					metadata = buildLifecycleMetadata(clazz);
+					//将结果缓存在lifecycleMetadataCache中
 					this.lifecycleMetadataCache.put(clazz, metadata);
 				}
 				return metadata;
