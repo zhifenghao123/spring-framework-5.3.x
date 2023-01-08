@@ -241,6 +241,13 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 	}
 
 
+	/**
+	 * AutowiredAnnotationBeanPostProcessor#postProcessMergedBeanDefinition()方法作用就是找到那些需要自动装配的元素。
+	 * 实现逻辑是先找到目标bean对象中的属性或者方法是否使用了@Autowired注解修饰，如果有@Autowired注解修饰，将会解析得到注解相关信息，
+	 * 将需要依赖注入的属性信息封装到InjectionMetadata类中，InjectionMetadata类中包含了哪些需要注入的元素及元素要注入到哪个目标类中。
+	 * 并将其存入到缓存injectionMetadataCache中，方便后面使用
+	 *
+	 */
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
 		// 找到需要自动装配的元素
