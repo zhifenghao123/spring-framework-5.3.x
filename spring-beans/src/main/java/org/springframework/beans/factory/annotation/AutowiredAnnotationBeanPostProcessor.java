@@ -513,18 +513,25 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
 
 	private InjectionMetadata findAutowiringMetadata(String beanName, Class<?> clazz, @Nullable PropertyValues pvs) {
+		// 如果当前 beanName 为null，那就选择class对象的名称
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
+		// 快速检查缓存中是否存在
 		// Quick check on the concurrent map first, with minimal locking.
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
+		// 如果缓存中有，不需要再次解析
+		// needsRefresh = true 需要解析
 		if (InjectionMetadata.needsRefresh(metadata, clazz)) {
 			synchronized (this.injectionMetadataCache) {
+				// 检查缓存中是否存在
 				metadata = this.injectionMetadataCache.get(cacheKey);
 				if (InjectionMetadata.needsRefresh(metadata, clazz)) {
 					if (metadata != null) {
 						metadata.clear(pvs);
 					}
+					// 寻找当前clazz中的注入点，把所有注入点整合成为一个InjectionMetadata对象
 					metadata = buildAutowiringMetadata(clazz);
+					// 添加到缓存中
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
 			}
