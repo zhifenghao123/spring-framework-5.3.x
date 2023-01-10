@@ -1554,11 +1554,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
 			// 根据 beanName 进行 autowiring 自动装配处理
+			// ps: <bean id="A" class="com.mrlsm.spring.A"  autowire="byName"></bean>
 			// Add property values based on autowire by name if applicable.
 			if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
 				autowireByName(beanName, mbd, bw, newPvs);
 			}
 			// 根据 Bean 的类型进行 autowiring 自动装配处理
+			// ps: <bean id="A" class="com.mrlsm.spring.A"  autowire="byType"></bean>
 			// Add property values based on autowire by type if applicable.
 			if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 				autowireByType(beanName, mbd, bw, newPvs);
