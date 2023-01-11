@@ -1659,23 +1659,35 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void autowireByType(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
 
+		//获取类型转换器
+		//Spring有两种类型转换器，一种是PropertyEditor 和 Converter。TypeConverter将它们两种集中在一起
 		TypeConverter converter = getCustomTypeConverter();
 		if (converter == null) {
 			converter = bw;
 		}
 
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
+		// 获取非基础类型的属性
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
 			try {
+				// 获取需要注入属性的 PropertyDescriptor
+				//PropertyDescriptor 顾名思义属性描述器 但是它存储的是获取或者改变该属性的方法
 				PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);
 				// Don't try autowiring by type for type Object: never makes sense,
 				// even if it technically is an unsatisfied, non-simple property.
+				// 排除 Object 类型
 				if (Object.class != pd.getPropertyType()) {
+					//MethodParameter，Parameter的封装类，例如存储着Parameter在Method中的索引
+					//这句代码通过PropertyDescriptor中WriterMethod（也就是Set方法中的参数）得到MethodParameter
 					MethodParameter methodParam = BeanUtils.getWriteMethodParameter(pd);
 					// Do not allow eager init for type matching in case of a prioritized post-processor.
 					boolean eager = !(bw.getWrappedInstance() instanceof PriorityOrdered);
+					//DependencyDescriptor 继承InjectionPoint
+					//InjectionPoint 注入的点 要么是MethodParameter 要么是 Field
+					//而这里是MethodParameter 构造时将methodParam作为参数代入
 					DependencyDescriptor desc = new AutowireByTypeDependencyDescriptor(methodParam, eager);
+					//开始处理依赖
 					Object autowiredArgument = resolveDependency(desc, beanName, autowiredBeanNames, converter);
 					if (autowiredArgument != null) {
 						pvs.add(propertyName, autowiredArgument);
