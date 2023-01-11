@@ -1622,9 +1622,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void autowireByName(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
 
+		// 获取非基础类型的属性
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
+			// 是否存在这个 beanName
 			if (containsBean(propertyName)) {
+				// 获取 bean
 				Object bean = getBean(propertyName);
 				pvs.add(propertyName, bean);
 				registerDependentBean(propertyName, beanName);
