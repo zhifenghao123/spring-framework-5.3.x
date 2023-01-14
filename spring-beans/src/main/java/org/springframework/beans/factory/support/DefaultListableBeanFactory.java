@@ -1620,6 +1620,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				this, requiredType, true, descriptor.isEager());
 		Map<String, Object> result = CollectionUtils.newLinkedHashMap(candidateNames.length);
 		// 这里我们一般不会涉及。如果注入的是 resolvableDependencies key类型，则会装配成value类型
+		// Spring会遍历this.resolvableDependencies集合, 如果我们注入的类型是这个集合中的类型, 则Spring会做一定的处理,
+		// 通常情况下这个集合会有如下几个类型:(1)ResourceLoader;(2)BeanFactory;(3))ApplicationContext;
+		// (4)ApplicationEventPublisher
 		for (Map.Entry<Class<?>, Object> classObjectEntry : this.resolvableDependencies.entrySet()) {
 			Class<?> autowiringType = classObjectEntry.getKey();
 			if (autowiringType.isAssignableFrom(requiredType)) {
