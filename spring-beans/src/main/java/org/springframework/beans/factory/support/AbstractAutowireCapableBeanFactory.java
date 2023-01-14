@@ -1578,8 +1578,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (pvs == null) {
 				pvs = mbd.getPropertyValues();
 			}
+			// 成员变量的注入
+			// 调用了InstantiationAwareBeanPostProcessor.postProcessPropertyValues()方法,来进行设值后处理
 			for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
 				// 在这里会对 @Autowired 标记的属性进行依赖注入
+				// 这里通过InstantiationAwareBeanPostProcessor的后处理器的postProcessPropertyValues方法完成了属性的注入。
+				// Spring 默认是通过AutowiredAnnotationBeanPostProcessor.postProcessPropertyValues()的实现来完成的属性的注入。
+				// AutowiredAnnotationBeanPostProcessor中完成了@Autowired、@Value 注解的自动注入功能。
+				//大概逻辑是，获取被@Autowired修饰的属性或者方法，如果是属性，则通过getBean()获取bean并注入，如果是方法，
+				// 则获取方法参数后，invoke()方法(调用该方法，因为我们一般写的都是set方法，给属性注入赋值)。
 				PropertyValues pvsToUse = bp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
 				if (pvsToUse == null) {
 					if (filteredPds == null) {
