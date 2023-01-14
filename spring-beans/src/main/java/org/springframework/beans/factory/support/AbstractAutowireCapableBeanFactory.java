@@ -1668,7 +1668,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
-		// 获取非基础类型的属性,也就是类型为对象类型的属性，但是这里并不是将所有的对象类型都都会找到，
+		// 寻找 bw中需要依赖注入的属性name
+		// 获取的是非基础类型的属性,也就是类型为对象类型的属性，但是这里并不是将所有的对象类型都都会找到，
 		// 比如 8 个原始类型，String 类型 ，Number类型、Date类型、URL类型、URI类型等都会被忽略
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
@@ -1690,11 +1691,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					//而这里是MethodParameter 构造时将methodParam作为参数代入
 					DependencyDescriptor desc = new AutowireByTypeDependencyDescriptor(methodParam, eager);
 					//开始处理依赖
+					// 解析指定beanName的属性所匹配的值，并把解析到的属性名存储在autowiredBeanNames中
+					// 当属性存在多个封装bean时，如 @Autowired List<Bean> beans,会找到所有的匹配Bean 类型的bean并将其注入。
+					// 这里的返回值是真正的需要注入的属性， autowiredBeanNames 是需要注入的属性(可能是集合)的names
 					Object autowiredArgument = resolveDependency(desc, beanName, autowiredBeanNames, converter);
 					if (autowiredArgument != null) {
+						// 添加到待注入的bean列表中
 						pvs.add(propertyName, autowiredArgument);
 					}
+					// 注册依赖
 					for (String autowiredBeanName : autowiredBeanNames) {
+						// 注册依赖关系。操作 dependentBeanMap 和  dependenciesForBeanMap 集合
 						registerDependentBean(autowiredBeanName, beanName);
 						if (logger.isTraceEnabled()) {
 							logger.trace("Autowiring by type from bean name '" + beanName + "' via property '" +
