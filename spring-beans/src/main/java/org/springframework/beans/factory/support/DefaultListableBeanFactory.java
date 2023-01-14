@@ -1477,7 +1477,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return stream;
 		}
+		// 如果是 数组类型
 		else if (type.isArray()) {
+			// 确定最终类型
 			Class<?> componentType = type.getComponentType();
 			ResolvableType resolvableType = descriptor.getResolvableType();
 			Class<?> resolvedArrayType = resolvableType.resolve(type);
@@ -1487,24 +1489,31 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (componentType == null) {
 				return null;
 			}
+			// 根据属性类型找到beanFactory中所有类型的匹配bean
+			// 返回值构成：key = 匹配的beanName, value = beanName对应的实例化bean，通过getBean(beanName)获取。
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, componentType,
 					new MultiElementDescriptor(descriptor));
+			// 如果是未找到匹配的bean，则返回null，
 			if (matchingBeans.isEmpty()) {
 				return null;
 			}
+			// 保存所有适配的 beanName
 			if (autowiredBeanNames != null) {
 				autowiredBeanNames.addAll(matchingBeans.keySet());
 			}
+			// 进行类型转换，将bean转换为对应的type类型。
 			TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
 			Object result = converter.convertIfNecessary(matchingBeans.values(), resolvedArrayType);
 			if (result instanceof Object[]) {
 				Comparator<Object> comparator = adaptDependencyComparator(matchingBeans);
 				if (comparator != null) {
+					// 排序
 					Arrays.sort((Object[]) result, comparator);
 				}
 			}
 			return result;
 		}
+		// 对Collection类型的处理，逻辑基本同上，这里不再赘述
 		else if (Collection.class.isAssignableFrom(type) && type.isInterface()) {
 			Class<?> elementType = descriptor.getResolvableType().asCollection().resolveGeneric();
 			if (elementType == null) {
@@ -1530,6 +1539,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return result;
 		}
+		// 对map类型的处理，逻辑类似上面
 		else if (Map.class == type) {
 			ResolvableType mapType = descriptor.getResolvableType().asMap();
 			Class<?> keyType = mapType.resolveGeneric(0);
