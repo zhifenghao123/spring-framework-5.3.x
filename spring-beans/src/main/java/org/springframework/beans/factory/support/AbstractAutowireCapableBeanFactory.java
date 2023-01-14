@@ -1622,7 +1622,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void autowireByName(
 			String beanName, AbstractBeanDefinition mbd, BeanWrapper bw, MutablePropertyValues pvs) {
 
-		// 获取非基础类型的属性
+		// 获取非基础类型的属性,也就是类型为对象类型的属性，但是这里并不是将所有的对象类型都都会找到，
+		// 比如 8 个原始类型，String 类型 ，Number类型、Date类型、URL类型、URI类型等都会被忽略
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
 			// 是否存在这个 beanName
@@ -1718,16 +1719,29 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @return an array of bean property names
 	 * @see org.springframework.beans.BeanUtils#isSimpleProperty
 	 */
+	/**
+	 * 过滤条件
+	 * (1)装配属性具有set 方法： 因为后面的装配是通过set方法装配
+	 * (2)依赖检查中没有被忽略
+	 * (3)没有property属性，因为这里property会被单独处理，不需要在这里保存
+	 * (4)不是简单类型，即不属于Void、void、 Enum、CharSequence、Number、Date、Temporal、URI、URL、Locale、Class 和
+	 *    八大基本数据类型及其包装类型。
+	 */
 	protected String[] unsatisfiedNonSimpleProperties(AbstractBeanDefinition mbd, BeanWrapper bw) {
 		Set<String> result = new TreeSet<>();
+		// 获取bean的property属性
 		PropertyValues pvs = mbd.getPropertyValues();
+		// 获取 bw 中的属性描述
 		PropertyDescriptor[] pds = bw.getPropertyDescriptors();
 		for (PropertyDescriptor pd : pds) {
+			// 如果pd属性具有set方法 && 依赖检查中没有被忽略 && 没有被配置成property属性 && 不是简单类型
 			if (pd.getWriteMethod() != null && !isExcludedFromDependencyCheck(pd) && !pvs.contains(pd.getName()) &&
 					!BeanUtils.isSimpleProperty(pd.getPropertyType())) {
+				// 添加到需要装配的集合中
 				result.add(pd.getName());
 			}
 		}
+		// 返回需要自动装配的bean集合
 		return StringUtils.toStringArray(result);
 	}
 
