@@ -1580,6 +1580,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 			// 成员变量的注入
 			// 调用了InstantiationAwareBeanPostProcessor.postProcessPropertyValues()方法,来进行设值后处理
+			// !!!!!!注解驱动的Bean执行属性填充并不在autowireByName和autowireByType中，
+			// 而是在AutowiredAnnotationBeanPostProcessor这个后置处理器的postProcessProperties中.
 			for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
 				// 在这里会对 @Autowired 标记的属性进行依赖注入
 				// 这里通过InstantiationAwareBeanPostProcessor的后处理器的postProcessPropertyValues方法完成了属性的注入。
