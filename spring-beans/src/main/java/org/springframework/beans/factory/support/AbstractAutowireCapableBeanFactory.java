@@ -2144,18 +2144,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void invokeCustomInitMethod(String beanName, Object bean, RootBeanDefinition mbd)
 			throws Throwable {
 
+		// 获取它的初始化方法名 ： initMethodName
 		String initMethodName = mbd.getInitMethodName();
 		Assert.state(initMethodName != null, "No init method set");
+		// 是否允许访问非公共构造函数和方法
+		// 如果允许的话调用 BeanUtils.findMethod(bean.getClass(), initMethodName);
+		// 不允许的话调用 ClassUtils.getMethodIfAvailable(bean.getClass(), initMethodName)
+
+		// BeanUtils.findMethod(bean.getClass(), initMethodName) ：查找具有给定方法名和给定参数类型的方法，
+		// 该方法在给定类或其超类之一上声明。首选公共方法，但也会返回一个受保护的、包访问或私有方法。
+		// ClassUtils.getMethodIfAvailable(bean.getClass(), initMethodName)：确定给定类是否有带有给定签名的公共方法，
+		// 并在可用时返回该方法
 		Method initMethod = (mbd.isNonPublicAccessAllowed() ?
 				BeanUtils.findMethod(bean.getClass(), initMethodName) :
 				ClassUtils.getMethodIfAvailable(bean.getClass(), initMethodName));
 
 		if (initMethod == null) {
+			// 配置的init方法是否为默认方法,true-是
 			if (mbd.isEnforceInitMethod()) {
+				// 如果mbd.isEnforceInitMethod() == true 则抛出异常，即没找到可使用的初始化方法
 				throw new BeanDefinitionValidationException("Could not find an init method named '" +
 						initMethodName + "' on bean with name '" + beanName + "'");
 			}
 			else {
+				// 否则直接返回，外面使用配置的初始化方法
 				if (logger.isTraceEnabled()) {
 					logger.trace("No default init method named '" + initMethodName +
 							"' found on bean with name '" + beanName + "'");
