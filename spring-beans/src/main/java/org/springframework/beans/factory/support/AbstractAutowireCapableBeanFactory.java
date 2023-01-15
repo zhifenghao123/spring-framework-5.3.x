@@ -2001,6 +2001,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #applyBeanPostProcessorsAfterInitialization
 	 */
 	protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+		// 判断系统的安全管理器是不是为null，如果不为null 调用 AccessController.doPrivileged(...)（这里它的主要作用，
+		// 就是获取一个特权，绕开权限检查）。然后执行 invokeAwareMethods(beanName, bean)，如果是null，
+		// 则直接调用 invokeAwareMethods(beanName, bean)
 		if (System.getSecurityManager() != null) {
 			AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
 				invokeAwareMethods(beanName, bean);
@@ -2008,15 +2011,23 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}, getAccessControlContext());
 		}
 		else {
+			// 对实现了不同类型Aware接口的bean，给做一些对应的处理
+			// 即首先判断 bean 实例是否属于 Aware 接口，如果是的话，然后再判断 bean 实例是否属于 xxxAware 接口，
+			// 如果是，则调用实例的 setXxx() 方法给实例设置 xxx 属性值。
+			// 在invokeAwareMethods() 方法里主要是：（1）给BeanNameAware设置 beanName；
+			// （2）给BeanClassLoaderAware设置 ClassLoader；（3）给BeanFactoryAware设置 BeanFactory
 			invokeAwareMethods(beanName, bean);
 		}
 
 		Object wrappedBean = bean;
+		// 判断当 mbd == null || mbd的定义不是合成的，即程序本身定义的
 		if (mbd == null || !mbd.isSynthetic()) {
+			// 执行后置处理器的postProcessBeforeInitialization 方法
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
 		try {
+			// 如果bean实现了InitializingBean或者用户自定义的init方法方法，那么调用这些初始化方法对bean的属性进行一些个性化设置
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {
@@ -2024,7 +2035,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					(mbd != null ? mbd.getResourceDescription() : null),
 					beanName, "Invocation of init method failed", ex);
 		}
+		// 判断当 mbd == null || mbd的定义不是合成的，即程序本身定义的
 		if (mbd == null || !mbd.isSynthetic()) {
+			// 执行后置处理器的postProcessAfterInitialization方法
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 
