@@ -2031,6 +2031,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// 如果bean实现了InitializingBean或者用户自定义的init方法方法，那么调用这些初始化方法对bean的属性进行一些个性化设置
+
+			// Spring提供了两种初始化方法的方式，一是实现InitializingBean接口，重写afterPropertiesSet方法，
+			// 二是在配置文件中配置init-method指定初始化方法。
+			// 两种方式可以同时使用，执行顺序是 afterPropertiesSet先执行，而 init-method 后执行。
+			// 如果调用afterPropertiesSet方法时出错，则不调用init-method指定的方法。
+			// 实现InitializingBean接口是直接调用afterPropertiesSet方法，比通过反射调用init-method指定的方法效率要高一点，
+			// 但是init-method方式相对而言比较灵活。
+			// 但就目前而言，我们的工程几乎应该都放弃这两种方式，而是采用注释的方式，所以可以使用 @PostConstruct 注解进行初始化。
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {
