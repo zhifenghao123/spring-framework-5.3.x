@@ -2023,6 +2023,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 判断当 mbd == null || mbd的定义不是合成的，即程序本身定义的
 		if (mbd == null || !mbd.isSynthetic()) {
 			// 执行后置处理器的postProcessBeforeInitialization 方法
+			// 获得所有 BeanPostProcessor，循环执行BeanPostProcessor中的 postProcessBeforeInitialization初始化前方法。
+			// 如果初始化前方法返回的结果集为null，则返回 result。如果不为 null，则将当前方法返回的结果暂存起来，
+			// 继续执行下一个 BeanPostProcessor中的postProcessBeforeInitialization初始化前方法。
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
@@ -2038,6 +2041,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 判断当 mbd == null || mbd的定义不是合成的，即程序本身定义的
 		if (mbd == null || !mbd.isSynthetic()) {
 			// 执行后置处理器的postProcessAfterInitialization方法
+			// 具体逻辑和applyBeanPostProcessorsBeforeInitialization类似
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 
@@ -2076,7 +2080,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void invokeInitMethods(String beanName, Object bean, @Nullable RootBeanDefinition mbd)
 			throws Throwable {
 
+		// 当前 Bean 是否实现了 InitializingBean 接口
 		boolean isInitializingBean = (bean instanceof InitializingBean);
+		// mbd.isExternallyManagedInitMethod("afterPropertiesSet") ： 判断有没有名为 afterPropertiesSet 这个外部管理的初始化方法
+		// 当 bean 是 InitializingBean 的实例类 && mbd没有名为 afterPropertiesSet 的外部管理的初始化方法
 		if (isInitializingBean && (mbd == null || !mbd.hasAnyExternallyManagedInitMethod("afterPropertiesSet"))) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Invoking afterPropertiesSet() on bean with name '" + beanName + "'");
@@ -2093,15 +2100,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 			}
 			else {
+				//执行  ((InitializingBean) bean).afterPropertiesSet() 这个方法，主要作用 ： 在 bean 属性设置后调用，
+				// 此方法允许bean实例对其整体性能进行验证，设置所有bean属性后的配置和最终初始化，在配置错误时会抛出异常。
 				((InitializingBean) bean).afterPropertiesSet();
 			}
 		}
 
+		// 当 mbd != null && bean的类型不是 NullBean
 		if (mbd != null && bean.getClass() != NullBean.class) {
+			// 获取mbd 的初始化方法的方法名:initMethodName
+			// 获得bean标签的 init-method 属性
 			String initMethodName = mbd.getInitMethodName();
+			//  initMethodName 不是(null或"") ： 方法名不为空
+			// && !( initMethodName && initMethodName不等于"afterPropertiesSet")：
+			//    是否实现了InitializingBean接口 并且 init-method 属性的值等于 afterPropertiesSet(取反)
+			// && initMethodName不是 mbd 的外部管理初始化方法：externallyManagedInitMethods Set集合中是否包含 init-method 属性的值(取反)
+			//	  externallyManagedInitMethods Set集合只记录 afterPropertiesSet
 			if (StringUtils.hasLength(initMethodName) &&
 					!(isInitializingBean && "afterPropertiesSet".equals(initMethodName)) &&
 					!mbd.hasAnyExternallyManagedInitMethod(initMethodName)) {
+				// 执行 invokeCustomInitMethod(beanName, bean, mbd) 方法，在给定bean上调用指定的自定义init方法。
+				// 反射机制执行 init-method="xxx"
 				invokeCustomInitMethod(beanName, bean, mbd);
 			}
 		}
