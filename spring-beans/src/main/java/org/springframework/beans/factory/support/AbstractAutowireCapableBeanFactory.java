@@ -2026,6 +2026,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 获得所有 BeanPostProcessor，循环执行BeanPostProcessor中的 postProcessBeforeInitialization初始化前方法。
 			// 如果初始化前方法返回的结果集为null，则返回 result。如果不为 null，则将当前方法返回的结果暂存起来，
 			// 继续执行下一个 BeanPostProcessor中的postProcessBeforeInitialization初始化前方法。
+			// CommonAnnotationBeanPostProcessor 在这里对@@PostConstruct 、@PreDestroy做了处理，具体代码是在其父类
+			// InitDestroyAnnotationBeanPostProcessor中
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
