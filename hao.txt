@@ -1,4 +1,5 @@
-txt
-this is a test
-this is a local test
-test2
+源码学习过程中参考的博文：
+（1）Spring源码之bean的销毁registerDisposableBeanIfNecessary方法解读
+https://blog.csdn.net/weixin_38192427/article/details/116546600
+（2）spring探秘之循环依赖的解决（一）：理论基石
+https://juejin.cn/post/7160113160718909454

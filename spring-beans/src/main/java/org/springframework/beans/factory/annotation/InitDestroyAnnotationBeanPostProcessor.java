@@ -152,8 +152,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		// 获取被@PostConstruct注解的方法元数据
 		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
 		try {
+			// 调用目标方法
 			metadata.invokeInitMethods(bean, beanName);
 		}
 		catch (InvocationTargetException ex) {
@@ -197,19 +199,26 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 
 	private LifecycleMetadata findLifecycleMetadata(Class<?> clazz) {
+		// 如果缓存为null，那么构建缓存；这个缓存是存储Bean中所有被@PostConstruct注解的方法元数据
 		//lifecycleMetadataCache属性是一个 Map clazz 为key  LifecycleMetadata 为值
 		if (this.lifecycleMetadataCache == null) {
+			// 构建缓存
 			// Happens after deserialization, during destruction...
 			return buildLifecycleMetadata(clazz);
 		}
+		// 如果缓存不为null，那么从缓存中取出所有被@PostConstruct注解的方法元数据
 		// Quick check on the concurrent map first, with minimal locking.
 		LifecycleMetadata metadata = this.lifecycleMetadataCache.get(clazz);
 		if (metadata == null) {
+			// 如果缓存中取出来的元数据为null，这段代码这种写法是考虑到现在有多个线程，
+			// 用了加锁操作保证只有一个线程去构建缓存buildLifecycleMetadata()
 			synchronized (this.lifecycleMetadataCache) {
 				metadata = this.lifecycleMetadataCache.get(clazz);
+				// 如果此时还没拿到元数据，就去构建缓存
 				if (metadata == null) {
+					// 收集好元数据
 					metadata = buildLifecycleMetadata(clazz);
-					//将结果缓存在lifecycleMetadataCache中
+					// 构建缓存，将结果缓存在lifecycleMetadataCache中
 					this.lifecycleMetadataCache.put(clazz, metadata);
 				}
 				return metadata;
