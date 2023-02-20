@@ -386,6 +386,14 @@ import org.springframework.stereotype.Component;
  * annotations remaining undetected).
  * </ul>
  *
+ *  added by haozhifeng:
+ *  （1）@Configuration用于定义配置类，可替换xml配置文件，被注解的类内部包含有一个或多个被@Bean注解的方法，这些方法将会被
+ *  AnnotationConfigApplicationContext或AnnotationConfigWebApplicationContext类进行扫描，并用于构建bean定义，初始化Spring容器。
+ *  也就是说，@Configuration标注在类上，相当于把该类作为spring的xml配置文件中的<beans>，作用为：配置spring容器(应用上下文)
+ *  （2）解析@Configuration的入口是ConfigurationClassPostProcessor。ConfigurationClassPostProcessor实现了
+ *  BeanDefinitionRegistryPostProcessor接口，使得Spring在初始过程中动态的向容器注册bean。
+ *  Spring会在容器初始过程中执行BeanDefinitionRegistryPostProcessor接口的postProcessBeanDefinitionRegistry方法。
+ *
  * @author Rod Johnson
  * @author Chris Beams
  * @author Juergen Hoeller
