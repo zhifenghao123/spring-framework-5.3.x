@@ -273,18 +273,58 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	/**
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
+	 *
+	 * added by haozhifeng:
+	 * Spring对于@Configuration配置类的处理，将整个工作过程分为两个阶段：解析阶段以及注册阶段。
+	 * 解析阶段由ConfigurationClassParser这个类负责，然后将解析结果交给ConfigurationClassBeanDefinitionReader注册到容器中。
+	 * 其中在解析阶段会将解析的信息保存到ConfigurationClass这个类中。主要将解析以下内容：
+	 * （1）首先判断这个配置类需不需要解析，对应条件注解@Conditional以及各种变体，如@ConditionalOnClass等。
+	 * （2）以同样逻辑解析配置类中的内部类，当然这些内部类得是一个配置类。
+	 * （3）解析配置类上的@PropertySource注解，将外部属性保存到全局环境Environment对象中。
+	 * （4）处理配置类上的@ComponentScan注解，相当于开启@Component注解扫描。
+	 * （5）解析配置类上的@Import注解。
+	 * （6）解析配置类上的@ImportResource注解，这个注解用于导入以前的XML方式配置的bean。
+	 * （7）解析配置类中的@Bean方法。
+	 * （8）以同样逻辑继续解析配置类的超类。
+	 * （9）解析完成后将该配置类加入到结果集合中。
+	 *
+	 * 其中，@Import注解可用来导入外部的注解配置或者可以动态的注册bean。主要分为3大类
+	 * 1）导入类实现了ImportSelector接口或者子接口DeferredImportSelector。
+	 * 	selectImports方法将会返回一个字符串数组，值为类的完全限定名。
+	 * 	ImportSelector和DeferredImportSelector主要区别在于selectImports执行顺序。一个在解析过程中执行，一个在配置类解析完成后执行。
+	 * 	这样selectImports选择的类将会在配置类后面，注册bean的顺序也会按照这个顺序注册。
+	 * 	Spring Boot中的自动配置类AutoConfigurationImportSelector就实现了DeferredImportSelector接口，再根据条件注解判断用户自己
+	 * 	有没有配置，没有配置才去装配bean。
+	 * 2）导入类实现了ImportBeanDefinitionRegistrar,用于动态注入bean。
+	 * 3）配置类，相当于引入另外一个配置类。
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
+		// 从容器中拿到所有已经注册过的bean
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
+		// 筛选出配置，不是所有的bean都是一个配置类的。
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+			// 已经解析过了, 跳过
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
+			/*
+			 * 判断是不是一个配置类。判断规则如下
+			 * （1）类上有没有@Configuration
+			 * （2）类上有没有@Component、@ComponentScan、@Import、@ImportResource
+			 * （3）类中有没有定义@Bean 方法
+			 * 三个条件满足任意一个即可，可见Spring并没有强制要求配置类一定要有@Configuration
+			 * 值得注意的是@Bean方法注册的bean不能作为配置类，因为其注册的BeanDefinition没有beanClassName, 通过工厂方法生成。
+			 * checkConfigurationClassCandidate方法开头存在以下判断
+			 * String className = beanDef.getBeanClassName();
+			 * if (className == null || beanDef.getFactoryMethodName() != null) {
+			 *	return false;
+			 * }
+			 */
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -320,6 +360,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			this.environment = new StandardEnvironment();
 		}
 
+		// 准备解析配置类
 		// Parse each @Configuration class
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
@@ -329,9 +370,12 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
+			// 解析目前所有的配置类，将结果保存到configurationClasses字段中
 			parser.parse(candidates);
+			// 校验，诸如配置类不能是final, bean 方法不能是private、final等。
 			parser.validate();
 
+			// 获取解析结果
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
 			configClasses.removeAll(alreadyParsed);
 
@@ -341,11 +385,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			// 注册bean
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 			processConfig.tag("classCount", () -> String.valueOf(configClasses.size())).end();
 
 			candidates.clear();
+			// 从新注册的bean里挑选新的配置类，开始一轮新的的解析、注册流程。
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
