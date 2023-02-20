@@ -239,7 +239,7 @@ public @interface ComponentScan {
 		 */
 		/**
 		 * 过滤器的参数，参数必须为class数组，单个参数可以不加大括号
-		 * 只能用于 ANNOTATION 、ASSIGNABLE_TYPE 、CUSTOM 这三个类型
+		 * 只能用于 ANNOTATION （按照注解过滤）、ASSIGNABLE_TYPE（按照给定的类型过滤） 、CUSTOM（按照自定义规则过滤） 这三个类型
 		 * @ComponentScan.Filter(type = FilterType.ANNOTATION, value = {Controller.class, Service.class})
 		 * @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {SchoolDao.class})
 		 * @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {MyTypeFilter.class})
