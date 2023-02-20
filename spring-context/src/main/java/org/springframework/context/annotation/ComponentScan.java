@@ -184,7 +184,9 @@ public @interface ComponentScan {
 	 *     @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "spring.annotation..*"),
 	 *     @ComponentScan.Filter(type = FilterType.REGEX, pattern = "^[A-Za-z.]+Dao$")
 	 * },useDefaultFilters = false)
-	 * useDefaultFilters 必须设为 false
+	 * includeFilters属性用于定义扫描过滤条件，满足该条件才进行扫描。用法与excludeFilters一样。
+	 * 但是因为useDefaultFilters属性默认为true，即使用默认的过滤器，启用对带有@Component，@Repository，@Service，@Controller
+	 * 注释的类的自动检测。会将带有这些注解的类注册为bean装配到IoC容器中。所以使用includeFilters时，需要把useDefaultFilters设置为false
 	 */
 	Filter[] includeFilters() default {};
 
@@ -244,7 +246,46 @@ public @interface ComponentScan {
 		 * @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {SchoolDao.class})
 		 * @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {MyTypeFilter.class})
 		 */
-		@AliasFor("classes")
+		/**
+		 * 自定义过滤规则
+		 * @ComponentScan注解扫描或解析的bean只能是Spring内部所定义的，比如@Component、@Service、@Controller或@Repository。
+		 * 如果要扫描一些自定义的注解，就可以自定义过滤规则来完成这个操作。
+		 *
+		 * 自定义一个类MyTypeFilter实现TypeFilter接口，这样这个TypeFilter就扫描所有类并只通过类名包含了controller的类，如下：
+		 *
+		 * public class MyTypeFilter implements TypeFilter {
+			/**
+			 * 两个参数的含义：
+			 * metadataReader：包含读取到的当前正在扫描的类的信息
+			 * metadataReaderFactory:可以获取到当前正在扫描的类的其他类信息(如父类和接口)
+			 * match方法返回false即不通过过滤规则，true通过过滤规则
+			 * @Override
+			 * public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
+			 *		throws IOException {
+			 *	// TODO Auto-generated method stub
+			 *	//获取当前类注解的信息
+			 *	AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
+			 *	//获取当前正在扫描的类的类信息
+			 *	ClassMetadata classMetadata = metadataReader.getClassMetadata();
+			 *	//获取当前类资源（类的路径）
+			 *	Resource resource = metadataReader.getResource();
+			 *	String className = classMetadata.getClassName();
+			 *	if(className.contains("controller")){
+			 *		return true;
+			 *	}
+			 *	return false;
+			 * }
+		     *    在@ComponentScan注解中进行配置，如下：
+		     * @Configuration
+		     * @ComponentScan(basePackages = "com.learn",includeFilters = {
+		     *                @Filter(type = FilterType.ASSIGNABLE_TYPE,classes = {Person.class}),
+		     *        @Filter(type = FilterType.CUSTOM,classes = {MyTypeFilter.class}),
+		     *  },useDefaultFilters = false)
+		     *   public class SpringConfig {
+		     *  }
+		     */
+
+			@AliasFor("classes")
 		Class<?>[] value() default {};
 
 		/**
@@ -282,32 +323,27 @@ public @interface ComponentScan {
 		 * ANNOTATION 参数为注解类，如  Controller.class, Service.class, Repository.class
 		 * ASSIGNABLE_TYPE 参数为类，如 SchoolDao.class
 		 * CUSTOM  参数为实现 TypeFilter 接口的类 ，如 MyTypeFilter.class
-		 * MyTypeFilter 同时还能实现 EnvironmentAware，BeanFactoryAware，BeanClassLoaderAware，ResourceLoaderAware
-		 * 这四个接口
-		 * EnvironmentAware
-		 * 此方法用来接收 Environment 数据 ，主要为程序的运行环境，Environment 接口继承自 PropertyResolver 接口，
+		 * MyTypeFilter 同时还能实现 EnvironmentAware，BeanFactoryAware，BeanClassLoaderAware，ResourceLoaderAware这四个接口
+		 * EnvironmentAware,此方法用来接收 Environment 数据 ，主要为程序的运行环境，Environment 接口继承自 PropertyResolver 接口，
 		 * 详细内容在下方
 		 * @Override
 		 * public void setEnvironment(Environment environment) {
 		 *    String property = environment.getProperty("os.name");
 		 * }
 		 *
-		 * BeanFactoryAware
-		 * BeanFactory Bean容器的根接口，用于操作容器，如获取bean的别名、类型、实例、是否单例的数据
+		 * BeanFactoryAware,BeanFactory Bean容器的根接口，用于操作容器，如获取bean的别名、类型、实例、是否单例的数据
 		 * @Override
 		 * public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		 *     Object bean = beanFactory.getBean("BeanName")
 		 * }
 		 *
-		 * BeanClassLoaderAware
-		 * ClassLoader 是类加载器，在此方法里只能获取资源和设置加载器状态
+		 * BeanClassLoaderAware, ClassLoader 是类加载器，在此方法里只能获取资源和设置加载器状态
 		 * @Override
 		 * public void setBeanClassLoader(ClassLoader classLoader) {
 		 *     ClassLoader parent = classLoader.getParent();
 		 * }
 		 *
-		 * ResourceLoaderAware
-		 * ResourceLoader 用于获取类加载器和根据路径获取资源
+		 * ResourceLoaderAware,ResourceLoader 用于获取类加载器和根据路径获取资源
 		 * public void setResourceLoader(ResourceLoader resourceLoader) {
 		 *     ClassLoader classLoader = resourceLoader.getClassLoader();
 		 * }
@@ -332,7 +368,7 @@ public @interface ComponentScan {
 		 * REGEX  参数为 正则表达式
 		 * @ComponentScan.Filter(type = FilterType.REGEX, pattern = "^[A-Za-z.]+Dao$")
 		 */
-
+		String[] pattern() default {};
 	}
 
 }
