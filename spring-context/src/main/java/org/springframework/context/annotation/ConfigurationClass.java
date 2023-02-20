@@ -48,23 +48,47 @@ import org.springframework.util.ClassUtils;
  */
 final class ConfigurationClass {
 
+	/**
+	 * 配置类的元数据
+	 */
 	private final AnnotationMetadata metadata;
 
+	/**
+	 * 配置类的.class文件表示
+	 */
 	private final Resource resource;
 
+	/**
+	 * bean的名字
+	 */
 	@Nullable
 	private String beanName;
 
+	/**
+	 * 记录该配置类被哪些别的配置类导入过
+	 */
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+	/**
+	 * 配置类中所有被@Bean标记的方法
+	 */
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
+	/**
+	 * @ImportResource
+	 */
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+	/**
+	 * @Import ImportBeanDefinitionRegistrar的实现类
+	 */
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 
+	/**
+	 * 用来存放哪些bean方法可以被跳过
+	 */
 	final Set<String> skippedBeanMethods = new HashSet<>();
 
 

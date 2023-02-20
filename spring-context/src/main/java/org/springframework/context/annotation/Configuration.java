@@ -32,15 +32,14 @@ import org.springframework.stereotype.Component;
  * may be processed by the Spring container to generate bean definitions and
  * service requests for those beans at runtime, for example:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class AppConfig {
+ *  @Configuration
+ *  public class AppConfig {
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         // instantiate, configure and return bean ...
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          // instantiate, configure and return bean ...
+ *      }
+ *  }
  *
  * <h2>Bootstrapping {@code @Configuration} classes</h2>
  *
@@ -51,13 +50,11 @@ import org.springframework.stereotype.Component;
  * {@link org.springframework.web.context.support.AnnotationConfigWebApplicationContext
  * AnnotationConfigWebApplicationContext}. A simple example with the former follows:
  *
- * <pre class="code">
  * AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
- * ctx.register(AppConfig.class);
- * ctx.refresh();
- * MyBean myBean = ctx.getBean(MyBean.class);
- * // use myBean ...
- * </pre>
+ *  ctx.register(AppConfig.class);
+ *  ctx.refresh();
+ *  MyBean myBean = ctx.getBean(MyBean.class);
+ *  // use myBean ...
  *
  * <p>See the {@link AnnotationConfigApplicationContext} javadocs for further details, and see
  * {@link org.springframework.web.context.support.AnnotationConfigWebApplicationContext
@@ -70,12 +67,10 @@ import org.springframework.stereotype.Component;
  * {@code AnnotationConfigApplicationContext}, {@code @Configuration} classes may be
  * declared as normal {@code <bean>} definitions within Spring XML files:
  *
- * <pre class="code">
- * &lt;beans&gt;
- *    &lt;context:annotation-config/&gt;
- *    &lt;bean class="com.acme.AppConfig"/&gt;
- * &lt;/beans&gt;
- * </pre>
+ *  <beans>
+ *     <context:annotation-config/>
+ *     <bean class="com.acme.AppConfig"/>
+ *  </beans>
  *
  * <p>In the example above, {@code <context:annotation-config/>} is required in order to
  * enable {@link ConfigurationClassPostProcessor} and other annotation-related
@@ -90,30 +85,28 @@ import org.springframework.stereotype.Component;
  * like any regular {@code @Component}. In particular, if a single constructor is present
  * autowiring semantics will be applied transparently for that constructor:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class AppConfig {
+ *  @Configuration
+ *  public class AppConfig {
  *
- *     private final SomeBean someBean;
+ *      private final SomeBean someBean;
  *
- *     public AppConfig(SomeBean someBean) {
- *         this.someBean = someBean;
- *     }
+ *      public AppConfig(SomeBean someBean) {
+ *          this.someBean = someBean;
+ *      }
  *
- *     // &#064;Bean definition using "SomeBean"
+ *      // @Bean definition using "SomeBean"
  *
- * }</pre>
+ *  }
  *
  * <p>{@code @Configuration} classes may not only be bootstrapped using
  * component scanning, but may also themselves <em>configure</em> component scanning using
  * the {@link ComponentScan @ComponentScan} annotation:
  *
- * <pre class="code">
- * &#064;Configuration
- * &#064;ComponentScan("com.acme.app.services")
- * public class AppConfig {
- *     // various &#064;Bean definitions ...
- * }</pre>
+ *  @Configuration
+ *  @ComponentScan("com.acme.app.services")
+ *  public class AppConfig {
+ *      // various @Bean definitions ...
+ *  }
  *
  * <p>See the {@link ComponentScan @ComponentScan} javadocs for details.
  *
@@ -125,37 +118,35 @@ import org.springframework.stereotype.Component;
  * {@link org.springframework.core.env.Environment} into a {@code @Configuration}
  * class &mdash; for example, using the {@code @Autowired} annotation:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class AppConfig {
+ *  @Configuration
+ *  public class AppConfig {
  *
- *     &#064;Autowired Environment env;
+ *      @Autowired Environment env;
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         MyBean myBean = new MyBean();
- *         myBean.setName(env.getProperty("bean.name"));
- *         return myBean;
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          MyBean myBean = new MyBean();
+ *          myBean.setName(env.getProperty("bean.name"));
+ *          return myBean;
+ *      }
+ *  }
  *
  * <p>Properties resolved through the {@code Environment} reside in one or more "property
  * source" objects, and {@code @Configuration} classes may contribute property sources to
  * the {@code Environment} object using the {@link PropertySource @PropertySource}
  * annotation:
  *
- * <pre class="code">
- * &#064;Configuration
- * &#064;PropertySource("classpath:/com/acme/app.properties")
- * public class AppConfig {
+ *  @Configuration
+ *  @PropertySource("classpath:/com/acme/app.properties")
+ *  public class AppConfig {
  *
- *     &#064;Inject Environment env;
+ *      @Inject Environment env;
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         return new MyBean(env.getProperty("bean.name"));
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          return new MyBean(env.getProperty("bean.name"));
+ *      }
+ *  }
  *
  * <p>See the {@link org.springframework.core.env.Environment Environment}
  * and {@link PropertySource @PropertySource} javadocs for further details.
@@ -165,18 +156,17 @@ import org.springframework.stereotype.Component;
  * <p>Externalized values may be injected into {@code @Configuration} classes using
  * the {@link Value @Value} annotation:
  *
- * <pre class="code">
- * &#064;Configuration
- * &#064;PropertySource("classpath:/com/acme/app.properties")
- * public class AppConfig {
+ *  @Configuration
+ *  @PropertySource("classpath:/com/acme/app.properties")
+ *  public class AppConfig {
  *
- *     &#064;Value("${bean.name}") String beanName;
+ *      @Value("${bean.name}") String beanName;
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         return new MyBean(beanName);
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          return new MyBean(beanName);
+ *      }
+ *  }
  *
  * <p>This approach is often used in conjunction with Spring's
  * {@link org.springframework.context.support.PropertySourcesPlaceholderConfigurer
@@ -206,32 +196,31 @@ import org.springframework.stereotype.Component;
  * {@code @Configuration} objects are managed as Spring beans within the container,
  * imported configurations may be injected &mdash; for example, via constructor injection:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class DatabaseConfig {
+ *  @Configuration
+ *  public class DatabaseConfig {
  *
- *     &#064;Bean
- *     public DataSource dataSource() {
- *         // instantiate, configure and return DataSource
- *     }
- * }
+ *      @Bean
+ *      public DataSource dataSource() {
+ *          // instantiate, configure and return DataSource
+ *      }
+ *  }
  *
- * &#064;Configuration
- * &#064;Import(DatabaseConfig.class)
- * public class AppConfig {
+ *  @Configuration
+ *  @Import(DatabaseConfig.class)
+ *  public class AppConfig {
  *
- *     private final DatabaseConfig dataConfig;
+ *      private final DatabaseConfig dataConfig;
  *
- *     public AppConfig(DatabaseConfig dataConfig) {
- *         this.dataConfig = dataConfig;
- *     }
+ *      public AppConfig(DatabaseConfig dataConfig) {
+ *          this.dataConfig = dataConfig;
+ *      }
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         // reference the dataSource() bean method
- *         return new MyBean(dataConfig.dataSource());
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          // reference the dataSource() bean method
+ *          return new MyBean(dataConfig.dataSource());
+ *      }
+ *  }
  *
  * <p>Now both {@code AppConfig} and the imported {@code DatabaseConfig} can be bootstrapped
  * by registering only {@code AppConfig} against the Spring context:
@@ -244,42 +233,40 @@ import org.springframework.stereotype.Component;
  * <p>{@code @Configuration} classes may be marked with the {@link Profile @Profile} annotation to
  * indicate they should be processed only if a given profile or profiles are <em>active</em>:
  *
- * <pre class="code">
- * &#064;Profile("development")
- * &#064;Configuration
- * public class EmbeddedDatabaseConfig {
+ *  @Profile("development")
+ *  @Configuration
+ *  public class EmbeddedDatabaseConfig {
  *
- *     &#064;Bean
- *     public DataSource dataSource() {
- *         // instantiate, configure and return embedded DataSource
- *     }
- * }
+ *      @Bean
+ *      public DataSource dataSource() {
+ *          // instantiate, configure and return embedded DataSource
+ *      }
+ *  }
  *
- * &#064;Profile("production")
- * &#064;Configuration
- * public class ProductionDatabaseConfig {
+ *  @Profile("production")
+ *  @Configuration
+ *  public class ProductionDatabaseConfig {
  *
- *     &#064;Bean
- *     public DataSource dataSource() {
- *         // instantiate, configure and return production DataSource
- *     }
- * }</pre>
+ *      @Bean
+ *      public DataSource dataSource() {
+ *          // instantiate, configure and return production DataSource
+ *      }
+ *  }
  *
  * <p>Alternatively, you may also declare profile conditions at the {@code @Bean} method level
  * &mdash; for example, for alternative bean variants within the same configuration class:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class ProfileDatabaseConfig {
+ *  @Configuration
+ *  public class ProfileDatabaseConfig {
  *
- *     &#064;Bean("dataSource")
- *     &#064;Profile("development")
- *     public DataSource embeddedDatabase() { ... }
+ *      @Bean("dataSource")
+ *      @Profile("development")
+ *      public DataSource embeddedDatabase() { ... }
  *
- *     &#064;Bean("dataSource")
- *     &#064;Profile("production")
- *     public DataSource productionDatabase() { ... }
- * }</pre>
+ *      @Bean("dataSource")
+ *      @Profile("production")
+ *      public DataSource productionDatabase() { ... }
+ *  }
  *
  * <p>See the {@link Profile @Profile} and {@link org.springframework.core.env.Environment}
  * javadocs for further details.
@@ -292,43 +279,41 @@ import org.springframework.stereotype.Component;
  * the {@link ImportResource @ImportResource} annotation. Bean definitions imported from
  * XML can be injected &mdash; for example, using the {@code @Inject} annotation:
  *
- * <pre class="code">
- * &#064;Configuration
- * &#064;ImportResource("classpath:/com/acme/database-config.xml")
- * public class AppConfig {
+ *  @Configuration
+ *  @ImportResource("classpath:/com/acme/database-config.xml")
+ *  public class AppConfig {
  *
- *     &#064;Inject DataSource dataSource; // from XML
+ *      @Inject DataSource dataSource; // from XML
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         // inject the XML-defined dataSource bean
- *         return new MyBean(this.dataSource);
- *     }
- * }</pre>
+ *      @Bean
+ *      public MyBean myBean() {
+ *          // inject the XML-defined dataSource bean
+ *          return new MyBean(this.dataSource);
+ *      }
+ *  }
  *
  * <h3>With nested {@code @Configuration} classes</h3>
  *
  * <p>{@code @Configuration} classes may be nested within one another as follows:
  *
- * <pre class="code">
- * &#064;Configuration
- * public class AppConfig {
+ *  @Configuration
+ *  public class AppConfig {
  *
- *     &#064;Inject DataSource dataSource;
+ *      @Inject DataSource dataSource;
  *
- *     &#064;Bean
- *     public MyBean myBean() {
- *         return new MyBean(dataSource);
- *     }
+ *      @Bean
+ *      public MyBean myBean() {
+ *          return new MyBean(dataSource);
+ *      }
  *
- *     &#064;Configuration
- *     static class DatabaseConfig {
- *         &#064;Bean
- *         DataSource dataSource() {
- *             return new EmbeddedDatabaseBuilder().build();
- *         }
- *     }
- * }</pre>
+ *      @Configuration
+ *      static class DatabaseConfig {
+ *          @Bean
+ *          DataSource dataSource() {
+ *              return new EmbeddedDatabaseBuilder().build();
+ *          }
+ *      }
+ *  }
  *
  * <p>When bootstrapping such an arrangement, only {@code AppConfig} need be registered
  * against the application context. By virtue of being a nested {@code @Configuration}
@@ -355,20 +340,19 @@ import org.springframework.stereotype.Component;
  * <em>component class</em> references &mdash; typically {@code @Configuration} or
  * {@code @Component} classes.
  *
- * <pre class="code">
- * &#064;RunWith(SpringRunner.class)
- * &#064;ContextConfiguration(classes = {AppConfig.class, DatabaseConfig.class})
- * public class MyTests {
+ *  @ExtendWith(SpringExtension.class)
+ *  @ContextConfiguration(classes = {AppConfig.class, DatabaseConfig.class})
+ *  class MyTests {
  *
- *     &#064;Autowired MyBean myBean;
+ *      @Autowired MyBean myBean;
  *
- *     &#064;Autowired DataSource dataSource;
+ *      @Autowired DataSource dataSource;
  *
- *     &#064;Test
- *     public void test() {
- *         // assertions against myBean ...
- *     }
- * }</pre>
+ *      @Test
+ *      void test() {
+ *          // assertions against myBean ...
+ *      }
+ *  }
  *
  * <p>See the
  * <a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/testing.html#testcontext-framework">TestContext framework</a>
@@ -401,6 +385,14 @@ import org.springframework.stereotype.Component;
  * (any such instances will be treated as regular beans, with their configuration
  * annotations remaining undetected).
  * </ul>
+ *
+ *  added by haozhifeng:
+ *  （1）@Configuration用于定义配置类，可替换xml配置文件，被注解的类内部包含有一个或多个被@Bean注解的方法，这些方法将会被
+ *  AnnotationConfigApplicationContext或AnnotationConfigWebApplicationContext类进行扫描，并用于构建bean定义，初始化Spring容器。
+ *  也就是说，@Configuration标注在类上，相当于把该类作为spring的xml配置文件中的<beans>，作用为：配置spring容器(应用上下文)
+ *  （2）解析@Configuration的入口是ConfigurationClassPostProcessor。ConfigurationClassPostProcessor实现了
+ *  BeanDefinitionRegistryPostProcessor接口，使得Spring在初始过程中动态的向容器注册bean。
+ *  Spring会在容器初始过程中执行BeanDefinitionRegistryPostProcessor接口的postProcessBeanDefinitionRegistry方法。
  *
  * @author Rod Johnson
  * @author Chris Beams
