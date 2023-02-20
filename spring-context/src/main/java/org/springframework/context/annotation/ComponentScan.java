@@ -64,6 +64,10 @@ public @interface ComponentScan {
 	 * are needed &mdash; for example, {@code @ComponentScan("org.my.pkg")}
 	 * instead of {@code @ComponentScan(basePackages = "org.my.pkg")}.
 	 */
+	/**
+	 * 扫描路径
+	 * @ComponentScan(value = "spring.annotation.componentscan")
+	 */
 	@AliasFor("basePackages")
 	String[] value() default {};
 
@@ -74,6 +78,7 @@ public @interface ComponentScan {
 	 * <p>Use {@link #basePackageClasses} for a type-safe alternative to
 	 * String-based package names.
 	 */
+	// 扫描路径
 	@AliasFor("value")
 	String[] basePackages() default {};
 
@@ -83,6 +88,7 @@ public @interface ComponentScan {
 	 * <p>Consider creating a special no-op marker class or interface in each package
 	 * that serves no purpose other than being referenced by this attribute.
 	 */
+	// 指定扫描类
 	Class<?>[] basePackageClasses() default {};
 
 	/**
@@ -97,10 +103,36 @@ public @interface ComponentScan {
 	 * @see AnnotationBeanNameGenerator
 	 * @see FullyQualifiedAnnotationBeanNameGenerator
 	 */
+	/**
+	 * 命名注册的Bean，可以自定义实现命名Bean，
+	 * 1、@ComponentScan(value = "spring.annotation.componentscan",nameGenerator = MyBeanNameGenerator.class)
+	 * MyBeanNameGenerator.class 需要实现 BeanNameGenerator 接口，所有实现BeanNameGenerator 接口的实现类都会被调用
+	 * 2、使用 AnnotationConfigApplicationContext 的 setBeanNameGenerator方法注入一个BeanNameGenerator
+	 * BeanNameGenerator beanNameGenerator = (definition,registry)-> String.valueOf(new Random().nextInt(1000));
+	 * AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext();
+	 * annotationConfigApplicationContext.setBeanNameGenerator(beanNameGenerator);
+	 * annotationConfigApplicationContext.register(MainConfig2.class);
+	 * annotationConfigApplicationContext.refresh();
+	 * 第一种方式只会重命名@ComponentScan扫描到的注解类
+	 * 第二种只有是初始化的注解类就会被重命名
+	 * 列如第一种方式不会重命名 @Configuration 注解的bean名称，而第二种就会重命名 @Configuration 注解的Bean名称
+	 */
 	Class<? extends BeanNameGenerator> nameGenerator() default BeanNameGenerator.class;
 
 	/**
 	 * The {@link ScopeMetadataResolver} to be used for resolving the scope of detected components.
+	 */
+	/**
+	 * 用于解析@Scope注解，可通过 AnnotationConfigApplicationContext 的 setScopeMetadataResolver 方法重新设定处理类
+	 * ScopeMetadataResolver scopeMetadataResolver = definition -> new ScopeMetadata();
+	 * 这里只是new了一个对象作为演示，没有做实际的逻辑操作
+	 * AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext();
+	 * annotationConfigApplicationContext.setScopeMetadataResolver(scopeMetadataResolver);
+	 * annotationConfigApplicationContext.register(MainConfig2.class);
+	 * annotationConfigApplicationContext.refresh();
+	 *
+	 * 也可以通过@ComponentScan 的 scopeResolver 属性设置
+	 *@ComponentScan(value = "spring.annotation.componentscan",scopeResolver = MyAnnotationScopeMetadataResolver.class)
 	 */
 	Class<? extends ScopeMetadataResolver> scopeResolver() default AnnotationScopeMetadataResolver.class;
 
@@ -112,6 +144,7 @@ public @interface ComponentScan {
 	 * <p>Note that setting this attribute overrides any value set for {@link #scopeResolver}.
 	 * @see ClassPathBeanDefinitionScanner#setScopedProxyMode(ScopedProxyMode)
 	 */
+	// 用来设置类的代理模式
 	ScopedProxyMode scopedProxy() default ScopedProxyMode.DEFAULT;
 
 	/**
@@ -119,11 +152,16 @@ public @interface ComponentScan {
 	 * <p>Consider use of {@link #includeFilters} and {@link #excludeFilters}
 	 * for a more flexible approach.
 	 */
+	// 扫描路径，如 resourcePattern = "**/*.class"
+	// 使用  includeFilters 和 excludeFilters 会更灵活
 	String resourcePattern() default ClassPathScanningCandidateComponentProvider.DEFAULT_RESOURCE_PATTERN;
 
 	/**
 	 * Indicates whether automatic detection of classes annotated with {@code @Component}
 	 * {@code @Repository}, {@code @Service}, or {@code @Controller} should be enabled.
+	 */
+	/**
+	 * 指示是否应启用对带有@Component，@Repository，@Service或@Controller注释的类的自动检测。
 	 */
 	boolean useDefaultFilters() default true;
 
@@ -137,11 +175,26 @@ public @interface ComponentScan {
 	 * @see #resourcePattern()
 	 * @see #useDefaultFilters()
 	 */
+	/**
+	 * 对被扫描的包或类进行过滤，若符合条件，不论组件上是否有注解，Bean对象都将被创建
+	 * @ComponentScan(value = "spring.annotation.componentscan",includeFilters = {
+	 *     @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {Controller.class, Service.class}),
+	 *     @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {SchoolDao.class}),
+	 *     @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {MyTypeFilter.class}),
+	 *     @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "spring.annotation..*"),
+	 *     @ComponentScan.Filter(type = FilterType.REGEX, pattern = "^[A-Za-z.]+Dao$")
+	 * },useDefaultFilters = false)
+	 * useDefaultFilters 必须设为 false
+	 */
 	Filter[] includeFilters() default {};
 
 	/**
 	 * Specifies which types are not eligible for component scanning.
 	 * @see #resourcePattern
+	 */
+	/**
+	 * 指定哪些类型不适合进行组件扫描。
+	 * 用法同 includeFilters 一样
 	 */
 	Filter[] excludeFilters() default {};
 
@@ -150,9 +203,16 @@ public @interface ComponentScan {
 	 * <p>Default is {@code false}; switch this to {@code true} when desired.
 	 * @since 4.1
 	 */
+	/**
+	 * 指定是否应注册扫描的Bean以进行延迟初始化。
+	 * @ComponentScan(value = "spring.annotation.componentscan",lazyInit = true)
+	 */
 	boolean lazyInit() default false;
 
 
+	/**
+	 * 用于 includeFilters 或 excludeFilters 的类型筛选器
+	 */
 	/**
 	 * Declares the type filter to be used as an {@linkplain ComponentScan#includeFilters
 	 * include filter} or {@linkplain ComponentScan#excludeFilters exclude filter}.
@@ -167,11 +227,22 @@ public @interface ComponentScan {
 		 * @see #classes
 		 * @see #pattern
 		 */
+		/**
+		 * 要使用的过滤器类型，默认为 ANNOTATION 注解类型
+		 * @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {Controller.class, Service.class})
+		 */
 		FilterType type() default FilterType.ANNOTATION;
 
 		/**
 		 * Alias for {@link #classes}.
 		 * @see #classes
+		 */
+		/**
+		 * 过滤器的参数，参数必须为class数组，单个参数可以不加大括号
+		 * 只能用于 ANNOTATION 、ASSIGNABLE_TYPE 、CUSTOM 这三个类型
+		 * @ComponentScan.Filter(type = FilterType.ANNOTATION, value = {Controller.class, Service.class})
+		 * @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {SchoolDao.class})
+		 * @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {MyTypeFilter.class})
 		 */
 		@AliasFor("classes")
 		Class<?>[] value() default {};
@@ -206,6 +277,41 @@ public @interface ComponentScan {
 		 * @see #value
 		 * @see #type
 		 */
+		/**
+		 * 作用同上面的 value 相同
+		 * ANNOTATION 参数为注解类，如  Controller.class, Service.class, Repository.class
+		 * ASSIGNABLE_TYPE 参数为类，如 SchoolDao.class
+		 * CUSTOM  参数为实现 TypeFilter 接口的类 ，如 MyTypeFilter.class
+		 * MyTypeFilter 同时还能实现 EnvironmentAware，BeanFactoryAware，BeanClassLoaderAware，ResourceLoaderAware
+		 * 这四个接口
+		 * EnvironmentAware
+		 * 此方法用来接收 Environment 数据 ，主要为程序的运行环境，Environment 接口继承自 PropertyResolver 接口，
+		 * 详细内容在下方
+		 * @Override
+		 * public void setEnvironment(Environment environment) {
+		 *    String property = environment.getProperty("os.name");
+		 * }
+		 *
+		 * BeanFactoryAware
+		 * BeanFactory Bean容器的根接口，用于操作容器，如获取bean的别名、类型、实例、是否单例的数据
+		 * @Override
+		 * public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		 *     Object bean = beanFactory.getBean("BeanName")
+		 * }
+		 *
+		 * BeanClassLoaderAware
+		 * ClassLoader 是类加载器，在此方法里只能获取资源和设置加载器状态
+		 * @Override
+		 * public void setBeanClassLoader(ClassLoader classLoader) {
+		 *     ClassLoader parent = classLoader.getParent();
+		 * }
+		 *
+		 * ResourceLoaderAware
+		 * ResourceLoader 用于获取类加载器和根据路径获取资源
+		 * public void setResourceLoader(ResourceLoader resourceLoader) {
+		 *     ClassLoader classLoader = resourceLoader.getClassLoader();
+		 * }
+		 */
 		@AliasFor("value")
 		Class<?>[] classes() default {};
 
@@ -219,7 +325,13 @@ public @interface ComponentScan {
 		 * @see #type
 		 * @see #classes
 		 */
-		String[] pattern() default {};
+		/**
+		 * 这个参数是 classes 或 value 的替代参数，主要用于 ASPECTJ 类型和  REGEX 类型
+		 * ASPECTJ  为 ASPECTJ 表达式
+		 * @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "spring.annotation..*")
+		 * REGEX  参数为 正则表达式
+		 * @ComponentScan.Filter(type = FilterType.REGEX, pattern = "^[A-Za-z.]+Dao$")
+		 */
 
 	}
 
