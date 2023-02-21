@@ -352,6 +352,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			return;
 		}
 
+		// 多个Java配置类，按@Ordered注解排序
 		// Sort by previously determined @Order value, if applicable
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
@@ -375,18 +376,22 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			}
 		}
 
+		//web应用为StandardServletEnvironment
 		if (this.environment == null) {
 			this.environment = new StandardEnvironment();
 		}
 
-		// 准备解析配置类，解析所有加了@Configuration注解的类
+		// 初始化一个ConfigurationClassParser解析器，解析所有加了@Configuration注解的类
 		// Parse each @Configuration class
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
 
+		// List转成Set
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
+		// 初始化一个已经解析的HashSet
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
+		// 循环解析，直到candidates为空
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
 			// 解析目前所有的配置类，将结果保存到configurationClasses字段中
@@ -395,44 +400,51 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// 通过其他注解(例如@Import、@Bean)的方式，在parse()方法这一步并不会将其解析为BeanDefinition放入到BeanDefinitionMap中，
 			// 而是先解析成ConfigurationClass类，真正放入到map中是在下面的this.reader.loadBeanDefinitions()方法中实现的
 			parser.parse(candidates);
-			// 校验，诸如配置类不能是final, bean 方法不能是private、final等。
+			// 校验，诸如配置类不能是final, bean 方法不能是private、final等。(CGLIB代理是生成一个子类，因此原先的类不能使用final修饰）
 			parser.validate();
 
 			// 获取解析结果
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
+			// 排除已处理过的配置类
 			configClasses.removeAll(alreadyParsed);
 
+			// 读取模型并根据其内容创建bean定义
 			// Read the model and create bean definitions based on its content
 			if (this.reader == null) {
 				this.reader = new ConfigurationClassBeanDefinitionReader(
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
-			// 注册bean
+			// 加载bean定义信息，主要实现将@Configuration @Import @ImportResource @ImportRegistrar注册为bean
 			// 将上一步parser解析出的ConfigurationClass类加载成BeanDefinition
 			// 实际上经过上一步的parse()后，解析出来的bean已经放入到BeanDefinition中了，但是由于这些bean可能会引入新的bean，
 			// 例如实现了ImportBeanDefinitionRegistrar或者ImportSelector接口的bean，或者bean中存在被@Bean注解的方法
 			// 因此需要执行一次loadBeanDefinition()，这样就会执行ImportBeanDefinitionRegistrar或者ImportSelector接口的方法或者@Bean注释的方法
 			this.reader.loadBeanDefinitions(configClasses);
+			// 将configClasses加入到已解析alreadyParsed中
 			alreadyParsed.addAll(configClasses);
 			processConfig.tag("classCount", () -> String.valueOf(configClasses.size())).end();
 
+			// 清空已处理的配置类
 			candidates.clear();
 			// 从新注册的bean里挑选新的配置类，开始一轮新的的解析、注册流程。
 			// 这里判断registry.getBeanDefinitionCount() > candidateNames.length的目的是为了知道reader.loadBeanDefinitions(configClasses)这一步有没有向BeanDefinitionMap中添加新的BeanDefinition
 			// 实际上就是看配置类(例如AppConfig类会向BeanDefinitionMap中添加bean)
 			// 如果有，registry.getBeanDefinitionCount()就会大于candidateNames.length
 			// 这样就需要再次遍历新加入的BeanDefinition，并判断这些bean是否已经被解析过了，如果未解析，需要重新进行解析
-			// 这里的AppConfig类向容器中添加的bean，实际上在parser.parse()这一步已经全部被解析了
-			// 所以为什么还需要做这个判断，目前没看懂，似乎没有任何意义。
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
+				// 容器中新的所有已注册的bean（包括老的）
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
+				// 容器中老的已注册的bean（已经解析了）
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
+				// 用来存储已经解析的类
 				Set<String> alreadyParsedClasses = new HashSet<>();
+				// 循环遍历把已解析的类放到alreadyParsedClasses中
 				for (ConfigurationClass configurationClass : alreadyParsed) {
 					alreadyParsedClasses.add(configurationClass.getMetadata().getClassName());
 				}
-				// 如果有未解析的类，则将其添加到candidates中，这样candidates不为空，就会进入到下一次的while的循环中
+				// 循环遍历新的所有已注册的bean，排除老的已解析的，再过滤是否是配置类带有@Configuration，并且没有解析过，
+				// 有的话则将其添加到candidates中，样candidates不为空，就会进入到下一次的while的循环中再处理解析
 				for (String candidateName : newCandidateNames) {
 					if (!oldCandidateNames.contains(candidateName)) {
 						BeanDefinition bd = registry.getBeanDefinition(candidateName);
