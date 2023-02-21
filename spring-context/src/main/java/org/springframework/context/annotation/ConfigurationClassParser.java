@@ -167,6 +167,8 @@ class ConfigurationClassParser {
 
 
 	public void parse(Set<BeanDefinitionHolder> configCandidates) {
+		// 根据BeanDefinition类型的不同，调用parse()不同的重载方法
+		// 实际上最终都是调用processConfigurationClass()方法
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
@@ -189,6 +191,8 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// parse方法，把被处理的类实现DeferredImportSelector接口，加入deferredImportSelectors集合中，
+		// 处理deferredImportSelectors集合种类
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -222,10 +226,15 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) throws IOException {
+		// 检查当前解析的配置bean是否包含Conditional注解，如果不包含则不需要跳过，
+		// 如果包含了则进行match方法得到匹配结果，如果是符合的并且设置的配置解析策略是解析阶段不需要调过
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
 
+		// 在这里处理Configuration重复import
+		// 如果同一个配置类被处理两次，两次都属于被import的则合并导入类，返回。
+		// 如果配置类不是被导入的，则移除旧使用新的配置类
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 			if (configClass.isImported()) {
@@ -245,11 +254,13 @@ class ConfigurationClassParser {
 
 		// Recursively process the configuration class and its superclass hierarchy.
 		SourceClass sourceClass = asSourceClass(configClass, filter);
+		// 递归解析
 		do {
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 		}
 		while (sourceClass != null);
 
+		// 添加到ConfigurationClassParser的configurationClasses中
 		this.configurationClasses.put(configClass, configClass);
 	}
 
