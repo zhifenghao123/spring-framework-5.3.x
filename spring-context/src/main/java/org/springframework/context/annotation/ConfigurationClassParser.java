@@ -496,6 +496,7 @@ class ConfigurationClassParser {
 
 		for (String location : locations) {
 			try {
+				// 如果配置类上有@PropertySource注解，则解析加载properties文件，并将属性添加到Spring上下文中。
 				String resolvedLocation = this.environment.resolveRequiredPlaceholders(location);
 				Resource resource = this.resourceLoader.getResource(resolvedLocation);
 				addPropertySource(factory.createPropertySource(name, new EncodedResource(resource, encoding)));
