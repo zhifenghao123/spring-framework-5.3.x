@@ -255,6 +255,7 @@ class ConfigurationClassParser {
 		// Recursively process the configuration class and its superclass hierarchy.
 		SourceClass sourceClass = asSourceClass(configClass, filter);
 		// 递归解析
+		// 如果有父类则返回父类Class对象，继续调用该方法。直到返回null，外层循环结束。
 		do {
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 		}
