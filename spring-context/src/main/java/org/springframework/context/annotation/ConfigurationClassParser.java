@@ -325,6 +325,8 @@ class ConfigurationClassParser {
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
+					//检验扫描获得的BeanDefinition中是否有配置类，如果有配置类,这里的配置类包括FullConfigurationClass和LiteConfigurationClass。
+					//（也就是说只要有@Configuration、@Component、@ComponentScan、@Import、@ImportResource和@Bean中的其中一个注解），则递归调用parse方法，进行解析。
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
