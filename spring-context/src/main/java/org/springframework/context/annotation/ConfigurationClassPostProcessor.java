@@ -548,6 +548,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		@Override
 		public PropertyValues postProcessProperties(@Nullable PropertyValues pvs, Object bean, String beanName) {
+			// 为被CGLIB增强时实现了EnhancedConfiguration接口的代理类，设置beanFactory属性
 			// Spring 会为@Configuration 配置类生成 EnhancedConfiguration 代理，该代理内部会使用 $$beanFactory 存储 BeanFactory
 			// Inject the BeanFactory before AutowiredAnnotationBeanPostProcessor's
 			// postProcessProperties method attempts to autowire other configuration beans.
