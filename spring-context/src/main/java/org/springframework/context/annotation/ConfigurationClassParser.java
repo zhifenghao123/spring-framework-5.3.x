@@ -348,6 +348,9 @@ class ConfigurationClassParser {
 			// 遍历配置的locations,加入到configClass 中的ImportedResource
 			for (String resource : resources) {
 				String resolvedResource = this.environment.resolveRequiredPlaceholders(resource);
+				// 把配置项提取出来，跟reader一起放入configClass的map中，
+				// 接下来会在ConfigurationClassPostProcessor类中processConfigBeanDefinitions方法中，解析完，
+				// this.reader.loadBeanDefinitions(configClasses)这方法会对@import处理（对ImportBeanDefinitionRegistrars的处理）
 				configClass.addImportedResource(resolvedResource, readerClass);
 			}
 		}
@@ -356,6 +359,8 @@ class ConfigurationClassParser {
 		// Process individual @Bean methods
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
+			// 将@Bean方法转化为BeanMethod对象，添加到configClass的beanMethods集合中，
+			// 接下来，会在this.reader.loadBeanDefinitions(configClasses)这方法得到处理
 			configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
 		}
 
@@ -363,6 +368,7 @@ class ConfigurationClassParser {
 		// Process default methods on interfaces
 		processInterfaces(configClass, sourceClass);
 
+		// 处理父类
 		// Process superclass, if any
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
