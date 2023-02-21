@@ -1,0 +1,35 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+'https://juejin.cn/post/6844903708745007112#heading-5
+'https://v3.processon.com/view/5faf8cbdf346fb2d03b5865d?fromnew=1
+start
+:调用BeanFactoryPostProcessor
+的postProcessBeanFactory()方法，
+对工厂定义信息进行后置处理;
+->通过getBean()调用一个bean;
+:调用InstantiationAwareBeanPostProcessor
+的postProcessBeforeInstantiation()方法;
+:实例化;
+:调用InstantiationAwareBeanPostProcessor
+的postProcessAfterInstantiation()方法;
+:调用InstantiationAwareBeanPostProcessor
+的postProcessPropertyValues()方法;
+:设置属性值;
+:调用BeanNameAware的setBeanName()方法;
+:调用BeanFactoryAware的setBeanFactory()方法;
+:调用ApplicationContextAware的setApplicationContext()方法;
+:调用BeanPostProcessor的postProcessBeforeInitialization方法;
+:调用InitializingBean的afterPropertiesSet()方法;
+:通过init-method属性配置的初始化方法;
+:调用BeanPostProcessor的postProcessAfterInitialization()方法;
+if (Bean的类型?) then (singleton)
+    :Spring缓冲池中准备就绪的Bean;
+    ->容器销毁;
+    :调用DisposableBean的destroy()方法;
+    :通过destroy-method属性配置的销毁方法;
+else (prototype)
+    :将准备就绪的Bean交给调用者;
+endif
+stop
+
+@enduml
