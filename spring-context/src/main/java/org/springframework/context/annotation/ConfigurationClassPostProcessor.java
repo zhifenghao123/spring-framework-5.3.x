@@ -300,12 +300,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * 3）配置类，相当于引入另外一个配置类。
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
+		// 1.初始化BeanDefinitionHolder集合
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
-		// 从容器中拿到所有已经注册过的bean
+		// 2.从容器中拿到所有已经注册过的bean
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
-		// 筛选出配置，不是所有的bean都是一个配置类的。
+		// 遍历已注册的bean数组，筛选出配置（不是所有的bean都是一个配置类的）。
 		for (String beanName : candidateNames) {
+			// 得到BeanDefinition实例
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
 			// 已经解析过了, 跳过
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
@@ -313,19 +315,23 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
-			/*
-			 * 判断是不是一个配置类。判断规则如下
-			 * （1）类上有没有@Configuration
-			 * （2）类上有没有@Component、@ComponentScan、@Import、@ImportResource
-			 * （3）类中有没有定义@Bean 方法
-			 * 三个条件满足任意一个即可，可见Spring并没有强制要求配置类一定要有@Configuration
-			 * 值得注意的是@Bean方法注册的bean不能作为配置类，因为其注册的BeanDefinition没有beanClassName, 通过工厂方法生成。
-			 * checkConfigurationClassCandidate方法开头存在以下判断
-			 * String className = beanDef.getBeanClassName();
-			 * if (className == null || beanDef.getFactoryMethodName() != null) {
-			 *	return false;
-			 * }
-			 */
+			//  ConfigurationClassUtils.checkConfigurationClassCandidate()会判断一个是否是一个配置类,并为BeanDefinition设置属性为lite或者full。
+			// (1) 判断是不是一个配置类的判断规则如下"
+			//		1）类上有没有@Configuration
+			//		2）类上有没有@Component、@ComponentScan、@Import、@ImportResource
+			//		3）类中有没有定义@Bean 方法
+			//	三个条件满足任意一个即可，可见Spring并没有强制要求配置类一定要有@Configuration
+			//	值得注意的是@Bean方法注册的bean不能作为配置类，因为其注册的BeanDefinition没有beanClassName, 通过工厂方法生成。
+			//	具体可以见checkConfigurationClassCandidate方法的开头存在以下判断
+			//	String className = beanDef.getBeanClassName();
+			//	if (className == null || beanDef.getFactoryMethodName() != null) {
+			//		return false;
+			//	}
+			// （2）在ConfigurationClassUtils.checkConfigurationClassCandidate()这儿同时会为BeanDefinition设置lite和full属性值，
+			// 这是为了后面在使用
+			// 如果加了@Configuration，那么对应的BeanDefinition为full;
+			// 如果加了@Bean,@Component,@ComponentScan,@Import,@ImportResource这些注解，则为lite。
+			// lite和full均表示这个BeanDefinition对应的类是一个配置类
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -348,6 +354,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
 			if (!this.localBeanNameGeneratorSet) {
+				// beanName的生成器，因为后面会扫描出所有加入到spring容器中class类，然后把这些class
+				// 解析成BeanDefinition类，此时需要利用BeanNameGenerator为这些BeanDefinition生成beanName
 				BeanNameGenerator generator = (BeanNameGenerator) sbr.getSingleton(
 						AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR);
 				if (generator != null) {
@@ -361,7 +369,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			this.environment = new StandardEnvironment();
 		}
 
-		// 准备解析配置类
+		// 准备解析配置类，解析所有加了@Configuration注解的类
 		// Parse each @Configuration class
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
@@ -372,6 +380,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
 			// 解析目前所有的配置类，将结果保存到configurationClasses字段中
+			// 解析配置类，在此处会解析配置类上的注解(ComponentScan扫描出的类，@Import注册的类，以及@Bean方法定义的类)
+			// 注意：这一步只会将加了@Configuration注解以及通过@ComponentScan注解扫描的类才会加入到BeanDefinitionMap中
+			// 通过其他注解(例如@Import、@Bean)的方式，在parse()方法这一步并不会将其解析为BeanDefinition放入到BeanDefinitionMap中，
+			// 而是先解析成ConfigurationClass类，真正放入到map中是在下面的this.reader.loadBeanDefinitions()方法中实现的
 			parser.parse(candidates);
 			// 校验，诸如配置类不能是final, bean 方法不能是private、final等。
 			parser.validate();
@@ -387,12 +399,22 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
 			// 注册bean
+			// 将上一步parser解析出的ConfigurationClass类加载成BeanDefinition
+			// 实际上经过上一步的parse()后，解析出来的bean已经放入到BeanDefinition中了，但是由于这些bean可能会引入新的bean，
+			// 例如实现了ImportBeanDefinitionRegistrar或者ImportSelector接口的bean，或者bean中存在被@Bean注解的方法
+			// 因此需要执行一次loadBeanDefinition()，这样就会执行ImportBeanDefinitionRegistrar或者ImportSelector接口的方法或者@Bean注释的方法
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 			processConfig.tag("classCount", () -> String.valueOf(configClasses.size())).end();
 
 			candidates.clear();
 			// 从新注册的bean里挑选新的配置类，开始一轮新的的解析、注册流程。
+			// 这里判断registry.getBeanDefinitionCount() > candidateNames.length的目的是为了知道reader.loadBeanDefinitions(configClasses)这一步有没有向BeanDefinitionMap中添加新的BeanDefinition
+			// 实际上就是看配置类(例如AppConfig类会向BeanDefinitionMap中添加bean)
+			// 如果有，registry.getBeanDefinitionCount()就会大于candidateNames.length
+			// 这样就需要再次遍历新加入的BeanDefinition，并判断这些bean是否已经被解析过了，如果未解析，需要重新进行解析
+			// 这里的AppConfig类向容器中添加的bean，实际上在parser.parse()这一步已经全部被解析了
+			// 所以为什么还需要做这个判断，目前没看懂，似乎没有任何意义。
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
@@ -400,6 +422,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				for (ConfigurationClass configurationClass : alreadyParsed) {
 					alreadyParsedClasses.add(configurationClass.getMetadata().getClassName());
 				}
+				// 如果有未解析的类，则将其添加到candidates中，这样candidates不为空，就会进入到下一次的while的循环中
 				for (String candidateName : newCandidateNames) {
 					if (!oldCandidateNames.contains(candidateName)) {
 						BeanDefinition bd = registry.getBeanDefinition(candidateName);
