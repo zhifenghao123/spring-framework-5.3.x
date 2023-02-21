@@ -275,7 +275,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * {@link Configuration} classes.
 	 *
 	 * added by haozhifeng:
-	 * Spring对于@Configuration配置类的处理，将整个工作过程分为两个阶段：解析阶段以及注册阶段。
+	 * Spring对于@Configuration配置类的处理，将整个工作过程分为两个阶段：
+	 * 解析阶段(ConfigurationClassParser#parse) 和 注册阶段(ConfigurationClassBeanDefinitionReader#loadBeanDefinitions)。
 	 * 解析阶段由ConfigurationClassParser这个类负责，然后将解析结果交给ConfigurationClassBeanDefinitionReader注册到容器中。
 	 * 其中在解析阶段会将解析的信息保存到ConfigurationClass这个类中。主要将解析以下内容：
 	 * （1）首先判断这个配置类需不需要解析，对应条件注解@Conditional以及各种变体，如@ConditionalOnClass等。
