@@ -3,8 +3,8 @@ package com.hao.annotationConfig;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import com.hao.xml1.component.Order;
-import com.hao.xml1.component.Product;
+import com.hao.annotationConfig.component.Order;
+import com.hao.annotationConfig.component.Product;
 
 /**
  * AnnotationConfigApplicationContextMain class
