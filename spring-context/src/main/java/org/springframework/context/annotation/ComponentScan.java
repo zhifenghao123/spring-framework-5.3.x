@@ -161,7 +161,7 @@ public @interface ComponentScan {
 	 * {@code @Repository}, {@code @Service}, or {@code @Controller} should be enabled.
 	 */
 	/**
-	 * 指示是否应启用对带有@Component，@Repository，@Service或@Controller注释的类的自动检测。
+	 * 指示是否应启用对带有@Component，@Repository，@Service或@Controller注解的类的自动检测。
 	 */
 	boolean useDefaultFilters() default true;
 
@@ -186,7 +186,7 @@ public @interface ComponentScan {
 	 * },useDefaultFilters = false)
 	 * includeFilters属性用于定义扫描过滤条件，满足该条件才进行扫描。用法与excludeFilters一样。
 	 * 但是因为useDefaultFilters属性默认为true，即使用默认的过滤器，启用对带有@Component，@Repository，@Service，@Controller
-	 * 注释的类的自动检测。会将带有这些注解的类注册为bean装配到IoC容器中。所以使用includeFilters时，需要把useDefaultFilters设置为false
+	 * 注解的类的自动检测。会将带有这些注解的类注册为bean装配到IoC容器中。所以使用includeFilters时，需要把useDefaultFilters设置为false
 	 */
 	Filter[] includeFilters() default {};
 

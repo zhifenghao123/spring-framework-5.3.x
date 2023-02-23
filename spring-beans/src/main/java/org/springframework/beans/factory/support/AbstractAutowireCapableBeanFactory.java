@@ -2041,7 +2041,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 如果调用afterPropertiesSet方法时出错，则不调用init-method指定的方法。
 			// 实现InitializingBean接口是直接调用afterPropertiesSet方法，比通过反射调用init-method指定的方法效率要高一点，
 			// 但是init-method方式相对而言比较灵活。
-			// 但就目前而言，我们的工程几乎应该都放弃这两种方式，而是采用注释的方式，所以可以使用 @PostConstruct 注解进行初始化。
+			// 但就目前而言，我们的工程几乎应该都放弃这两种方式，而是采用注解的方式，所以可以使用 @PostConstruct 注解进行初始化。
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {

@@ -280,11 +280,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 * 所以bean是一个经历了spring周期的对象，和一个对象有区别。
 		 *
 		 * 再回到前面说的循环引用，首先Spring扫描到一个需要被实例化的类A，于是Spring就创建A，A a = new A(); new A的过程会调用getBean("a");
-		 * 所谓的getBean方法--核心也就是笔者现在写注释的这个getSingleton(beanName),这个时候get出来肯定为空？为什么是空呢？
+		 * 所谓的getBean方法--核心也就是笔者现在写注解的这个getSingleton(beanName),这个时候get出来肯定为空？为什么是空呢？
 		 * 可能有的读者会认为getBean就是去容器中获取，所以肯定为空，其实不然，接着往下看。
 		 * 如果getA等于空，Spring就回去实例化A，也就是上面的new A，
 		 * 但是在实例化A的时候会再次调用一下getSingleton(String beanName, ObjectFactory<?> singletonFactory)
-		 * 笔者上面说过现在写的注释是给getSingleton(beanName)，也即是第一次调用getSingleton(beanName)
+		 * 笔者上面说过现在写的注解是给getSingleton(beanName)，也即是第一次调用getSingleton(beanName)
 		 * 实例化总共会调用两次getSingleton方法，但是是重载。
 		 * 第二次调用getSingleton方法的时候Spring会在一个set集合当中记录一下这个类正在被创建，这个一定要记住，
 		 * 在调用完第一个getSingleton完成之后，Spring判断这个类没有创建，然后调用第二次getSingleton，
@@ -312,7 +312,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 * 当进行到对象a的属性填充这一周期的时候，发现a依赖了一个B类，
 		 * 所以Spring就回去判断这个B类到底有没有bean在容器中，这里的判断就是从第一个map即单例池当中去拿一个bean，
 		 * 假设没有，那么Spring会先去调用createBean创建这个bean， 于是又回到和创建A一样的流程，在创建B的时候同样也会去getBean("B")；
-		 * getBean的核心也就是笔者现在写注释的这个getSingleton(beanName)方法，
+		 * getBean的核心也就是笔者现在写注解的这个getSingleton(beanName)方法，
 		 * 这个时候get出来肯定为空，为什么是空呢？
 		 * 第一次调用getSingleton完成之后会调用第二次getSingleton， 第二次调用getSingleton同样会在set集合中去记录B正在创建，
 		 * 这个时候set集合至少有了两个记录了A和B；
