@@ -1,6 +1,6 @@
-package com.hao.xml1.component;
+package com.hao.xml2.component;
 
-import java.util.Date;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Order class
@@ -11,6 +11,7 @@ import java.util.Date;
 public class Order {
     private String orderId;
     private String userAccountId;
+    @Autowired
     private Product product;
 
     public String getOrderId() {

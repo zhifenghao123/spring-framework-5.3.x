@@ -3,14 +3,16 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <bean id="product" class="com.hao.xml1.component.Product">
+    <!-- 该 BeanPostProcessor 将自动起作用，对标注 @Autowired 的 Bean 进行自动注入 -->
+    <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/>
+
+    <bean id="product" class="com.hao.xml2.component.Product">
         <property name="productId" value="11111"></property>
         <property name="productName" value="orange"></property>
         <property name="price" value="5.4"></property>
     </bean>
-    <bean id="order" class="com.hao.xml1.component.Order">
+    <bean id="order" class="com.hao.xml2.component.Order">
         <property name="orderId" value="22222"></property>
         <property name="userAccountId" value="haozhifeng"></property>
-        <property name="product" ref="product"></property>
     </bean>
 </beans>

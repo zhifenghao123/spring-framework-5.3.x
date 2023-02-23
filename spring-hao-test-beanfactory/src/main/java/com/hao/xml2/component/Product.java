@@ -1,4 +1,4 @@
-package com.hao.xml1.component;
+package com.hao.xml2.component;
 
 /**
  * Product class
