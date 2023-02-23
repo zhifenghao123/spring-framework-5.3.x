@@ -294,13 +294,13 @@ class ConfigurationClassParser {
 			ConfigurationClass configClass, SourceClass sourceClass, Predicate<String> filter)
 			throws IOException {
 
-		// 处理内部类
+		// 1、首先处理内部类，处理内部类时，最终还是调用doProcessConfigurationClass()方法
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
-		// 处理@PropertySource注解
+		// 2、处理属性资源文件，加了@PropertySource注解
 		// Process any @PropertySource annotations
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
@@ -314,24 +314,31 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 处理@ComponentScan注解
 		// Process any @ComponentScan annotations
+		// 3、处理@ComponentScan或者@ComponentScans注解
+		// 3.1 先找出类上的@ComponentScan和@ComponentScans注解的所有属性(例如basePackages等属性值)
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
 		if (!componentScans.isEmpty() &&
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
+				// 3.2 解析@ComponentScan和@ComponentScans配置的扫描的包所包含的类
+				// 比如 basePackages = com.tiantang.study, 那么在这一步会扫描出这个包及子包下的class，然后将其解析成BeanDefinition
+				// (BeanDefinition可以理解为等价于BeanDefinitionHolder)
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// 遍历扫描到的配置类进行递归解析
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
+				// 3.3 通过上一步扫描包com.tiantang.study下的类，有可能扫描出来的bean中可能也添加了ComponentScan或者ComponentScans注解.
+				//所以这里需要循环遍历一次，进行递归(parse)，继续解析，直到解析出的类上没有ComponentScan和ComponentScans
+				// (这时3.1这一步解析出componentScans为空列表，不会进入到if语句，递归终止)
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
-					//检验扫描获得的BeanDefinition中是否有配置类，如果有配置类,这里的配置类包括FullConfigurationClass和LiteConfigurationClass。
+					// 检验扫描获得的BeanDefinition中是否有配置类，如果有配置类,这里的配置类包括FullConfigurationClass和LiteConfigurationClass。
 					//（也就是说只要有@Configuration、@Component、@ComponentScan、@Import、@ImportResource和@Bean中的其中一个注解），则递归调用parse方法，进行解析。
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
@@ -340,11 +347,12 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 处理@Import注解
 		// Process any @Import annotations
+		// 4.处理Import注解注册的bean，这一步只会将import注册的bean变为ConfigurationClass,不会变成BeanDefinition
+		// 而是在loadBeanDefinitions()方法中变成BeanDefinition，再放入到BeanDefinitionMap中
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 
-		// 处理@ImportResource 注解
+		// 5.处理@ImportResource注解引入的配置文件
 		// Process any @ImportResource annotations
 		AnnotationAttributes importResource =
 				AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
@@ -361,8 +369,8 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 处理@Bean修饰的方法
 		// Process individual @Bean methods
+		// 6.处理@Bean修饰的方法
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
 			// 将@Bean方法转化为BeanMethod对象，添加到configClass的beanMethods集合中，
