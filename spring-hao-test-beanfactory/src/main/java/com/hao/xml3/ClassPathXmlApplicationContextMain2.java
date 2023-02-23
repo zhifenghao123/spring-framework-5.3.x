@@ -7,7 +7,7 @@ import com.hao.xml2.component.Product;
 
 /**
  * ClassPathXmlApplicationContextMain2 class
- * 1、半配置半注解方式(对象属性用注解@Autowired配置，普通属性xml配置)
+ * 1、半配置半注解方式(对象属性用注解配置，普通属性xml配置)
  * （1）注入一般的属性包括对象属性可以在bean的property属性中编写，但注入对象属性也可以不用在property中编写，可以通过注解的方式
  * （2）Spring 2.5 引入了 @Autowired 注释，它可以对类成员变量、方法及构造函数进行标注，完成自动装配的工作。
  *     构造函数包括无参构造函数、只含有要注入bean类型的构造函数，以及多参数构造函数上，(如果有多余的参数，则配置文件必须含对应参数的bean对象）
