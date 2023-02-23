@@ -1,5 +1,6 @@
 package com.hao.xml4;
 
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.hao.xml4.component.Order;
@@ -28,8 +29,17 @@ public class ClassPathXmlApplicationContextMain4 {
                 new ClassPathXmlApplicationContext("applicationContext-4.xml");
         Product product = xmlApplicationContext.getBean(Product.class);
         Order order = xmlApplicationContext.getBean(Order.class);
+        System.out.println("--------------------");
+        String[] beanDefinitionNames = xmlApplicationContext.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            BeanDefinition beanDefinition =
+                    xmlApplicationContext.getBeanFactory().getBeanDefinition(beanDefinitionName);
+            System.out.println(beanDefinition.getBeanClassName());
+        }
+        System.out.println("--------------------");
         System.out.println(product);
         System.out.println(order);
+        System.out.println("--------------------");
 
         xmlApplicationContext.destroy();// 关闭 Spring 容器，以触发 Bean 销毁方法的执行
 

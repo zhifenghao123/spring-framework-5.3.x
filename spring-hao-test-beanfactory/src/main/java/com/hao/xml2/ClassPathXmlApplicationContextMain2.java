@@ -1,5 +1,6 @@
 package com.hao.xml2;
 
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.hao.xml2.component.Order;
@@ -28,7 +29,16 @@ public class ClassPathXmlApplicationContextMain2 {
                 new ClassPathXmlApplicationContext("applicationContext-2.xml");
         Product product = xmlApplicationContext.getBean(Product.class);
         Order order = xmlApplicationContext.getBean(Order.class);
+        System.out.println("--------------------");
+        String[] beanDefinitionNames = xmlApplicationContext.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            BeanDefinition beanDefinition =
+                    xmlApplicationContext.getBeanFactory().getBeanDefinition(beanDefinitionName);
+            System.out.println(beanDefinition.getBeanClassName());
+        }
+        System.out.println("--------------------");
         System.out.println(product);
         System.out.println(order);
+        System.out.println("--------------------");
     }
 }

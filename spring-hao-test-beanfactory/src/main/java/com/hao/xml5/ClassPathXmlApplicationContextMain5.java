@@ -1,5 +1,6 @@
 package com.hao.xml5;
 
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.hao.xml5.component.Order;
@@ -49,8 +50,17 @@ public class ClassPathXmlApplicationContextMain5 {
                 new ClassPathXmlApplicationContext("applicationContext-5.xml");
         Product product = xmlApplicationContext.getBean(Product.class);
         Order order = xmlApplicationContext.getBean(Order.class);
+        System.out.println("--------------------");
+        String[] beanDefinitionNames = xmlApplicationContext.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            BeanDefinition beanDefinition =
+                    xmlApplicationContext.getBeanFactory().getBeanDefinition(beanDefinitionName);
+            System.out.println(beanDefinition.getBeanClassName());
+        }
+        System.out.println("--------------------");
         System.out.println(product);
         System.out.println(order);
+        System.out.println("--------------------");
 
 
     }
