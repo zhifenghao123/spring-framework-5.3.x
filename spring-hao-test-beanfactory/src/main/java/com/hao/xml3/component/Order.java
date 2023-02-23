@@ -1,6 +1,6 @@
-package com.hao.xml2.component;
+package com.hao.xml3.component;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import javax.annotation.Resource;
 
 /**
  * Order class
@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Order {
     private String orderId;
     private String userAccountId;
-    @Autowired
+    @Resource
     private Product product;
 
     public String getOrderId() {

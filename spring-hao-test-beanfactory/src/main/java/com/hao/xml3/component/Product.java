@@ -1,4 +1,7 @@
-package com.hao.xml2.component;
+package com.hao.xml3.component;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Product class
@@ -33,5 +36,15 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+        System.out.println("in Product : @PostConstruct");
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        System.out.println("in Product : @PreDestroy");
     }
 }
