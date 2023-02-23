@@ -9,8 +9,8 @@ import com.hao.xml4.component.Product;
 /**
  * ClassPathXmlApplicationContextMain4 class
  * 4、半配置半注解方式(对象属性用注解@Resource或@Autowired配置，普通属性xml配置，但使用 <context:annotation-config/> 简化配置)
- * （1）Spring 2.1 添加了一个新的 context 的 Schema 命名空间，该命名空间对注释驱动、属性文件引入、加载期织入等功能提供了便捷的配置。
- *    我们知道注释本身是不会做任何事情的，它仅提供元数据信息。要使元数 据信息真正起作用，必须让负责处理这些元数据的处理器工作起来。
+ * （1）Spring 2.1 添加了一个新的 context 的 Schema 命名空间，该命名空间对注解驱动、属性文件引入、加载期织入等功能提供了便捷的配置。
+ *    我们知道注解本身是不会做任何事情的，它仅提供元数据信息。要使元数 据信息真正起作用，必须让负责处理这些元数据的处理器工作起来。
  * （2）而我们前面所介绍的 AutowiredAnnotationBeanPostProcessor 和 CommonAnnotationBeanPostProcessor 就是处理这些注释元数据的处理器。
  *    但是直接在 Spring 配置文件中定义这些 Bean 显得比较笨拙。Spring 为我们提供了一种方便的注册这些BeanPostProcessor 的方式，
  *    这就是 <context:annotation-config/>
