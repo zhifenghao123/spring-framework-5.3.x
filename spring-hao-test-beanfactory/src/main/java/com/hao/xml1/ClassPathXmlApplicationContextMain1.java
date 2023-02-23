@@ -6,7 +6,7 @@ import com.hao.xml1.component.Order;
 import com.hao.xml1.component.Product;
 
 /**
- * ClassPathXmlApplicationContextMain2 class
+ * ClassPathXmlApplicationContextMain1 class
  * 1、采用完全xml配置方式 配置Bean以及Bean之间依赖关系
  *
  * @author haozhifeng

@@ -6,7 +6,7 @@ import com.hao.xml3.component.Order;
 import com.hao.xml3.component.Product;
 
 /**
- * ClassPathXmlApplicationContextMain2 class
+ * ClassPathXmlApplicationContextMain5 class
  * 1、半配置半注解方式(对象属性用注解@Resource配置，普通属性xml配置)
  * （1）Spring 不但支持自己定义的 @Autowired 的注释，还支持几个由 JSR-250 规范定义的注释，它们分别是 @Resource、@PostConstruct以及 @PreDestroy。
  * （2）@Resource 的作用相当于 @Autowired，只不过 @Autowired 按 byType 自动注入，而 @Resource 默认按 byName 自动注入罢了。
@@ -26,7 +26,7 @@ import com.hao.xml3.component.Product;
  * @author haozhifeng
  * @date 2023/02/23
  */
-public class ClassPathXmlApplicationContextMain2 {
+public class ClassPathXmlApplicationContextMain3 {
     @SuppressWarnings("deprecation")
     public static void main(String[] args) {
         ClassPathXmlApplicationContext xmlApplicationContext =

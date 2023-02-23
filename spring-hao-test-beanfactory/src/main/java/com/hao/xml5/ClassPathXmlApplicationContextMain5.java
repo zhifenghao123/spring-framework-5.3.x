@@ -6,7 +6,7 @@ import com.hao.xml5.component.Order;
 import com.hao.xml5.component.Product;
 
 /**
- * ClassPathXmlApplicationContextMain2 class
+ * ClassPathXmlApplicationContextMain5 class
  * 4、使用@Component注解完成Bean的定义
  * （1）在前面几种方式中，可以通过 @Autowired 或 @Resource 在 Bean 类中使用自动注入功能，但是 Bean 还是在 XML 文件中通过 <bean> 进
  * 行定义。也就是说，在 XML 配置文件中定义Bean，通过@Autowired 或 @Resource 为 Bean 的成员变量、方法入参或构造函数入参提供自动注入的功能。
@@ -43,7 +43,7 @@ import com.hao.xml5.component.Product;
  * @author haozhifeng
  * @date 2023/02/23
  */
-public class ClassPathXmlApplicationContextMain2 {
+public class ClassPathXmlApplicationContextMain5 {
     public static void main(String[] args) {
         ClassPathXmlApplicationContext xmlApplicationContext =
                 new ClassPathXmlApplicationContext("applicationContext-5.xml");

@@ -6,7 +6,7 @@ import com.hao.xml4.component.Order;
 import com.hao.xml4.component.Product;
 
 /**
- * ClassPathXmlApplicationContextMain2 class
+ * ClassPathXmlApplicationContextMain4 class
  * 4、半配置半注解方式(对象属性用注解@Resource或@Autowired配置，普通属性xml配置，但使用 <context:annotation-config/> 简化配置)
  * （1）Spring 2.1 添加了一个新的 context 的 Schema 命名空间，该命名空间对注释驱动、属性文件引入、加载期织入等功能提供了便捷的配置。
  *    我们知道注释本身是不会做任何事情的，它仅提供元数据信息。要使元数 据信息真正起作用，必须让负责处理这些元数据的处理器工作起来。
@@ -21,7 +21,7 @@ import com.hao.xml4.component.Product;
  * @author haozhifeng
  * @date 2023/02/23
  */
-public class ClassPathXmlApplicationContextMain2 {
+public class ClassPathXmlApplicationContextMain4 {
     @SuppressWarnings("deprecation")
     public static void main(String[] args) {
         ClassPathXmlApplicationContext xmlApplicationContext =
