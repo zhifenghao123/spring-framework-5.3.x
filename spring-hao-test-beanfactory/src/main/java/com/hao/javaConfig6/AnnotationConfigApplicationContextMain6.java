@@ -1,11 +1,11 @@
-package com.hao.javaConfig5;
+package com.hao.javaConfig6;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import com.hao.javaConfig5.component.Comment;
-import com.hao.javaConfig5.component.Order;
-import com.hao.javaConfig5.component.Product;
+import com.hao.javaConfig6.component.Comment;
+import com.hao.javaConfig6.component.Order;
+import com.hao.javaConfig6.component.Product;
 
 /**
  * AnnotationConfigApplicationContextMain1 class
@@ -24,9 +24,9 @@ public class AnnotationConfigApplicationContextMain1 {
         AnnotationConfigApplicationContext annotationConfigApplicationContext =
                 new AnnotationConfigApplicationContext(AppConfig.class);
 
-        Product product = annotationConfigApplicationContext.getBean(Product.class);
+       /* Product product = annotationConfigApplicationContext.getBean(Product.class);
         Order order = annotationConfigApplicationContext.getBean(Order.class);
-        Comment comment = annotationConfigApplicationContext.getBean(Comment.class);
+        Comment comment = annotationConfigApplicationContext.getBean(Comment.class);*/
 
         System.out.println("--------------------");
         String[] beanDefinitionNames = annotationConfigApplicationContext.getBeanDefinitionNames();
@@ -38,12 +38,12 @@ public class AnnotationConfigApplicationContextMain1 {
                 System.out.println(beanDefinition.getFactoryBeanName() + "##" + beanDefinition.getFactoryMethodName());
             }
         }
-        System.out.println("--------------------");
+       /* System.out.println("--------------------");
         System.out.println(product);
         System.out.println(order);
         System.out.println(comment);
         System.out.println("--------------------");
-        System.out.println("order.getProduct == comment.getProduct 为 ：" + (order.getProduct() == comment.getProduct()));
+        System.out.println("order.getProduct == comment.getProduct 为 ：" + (order.getProduct() == comment.getProduct()));*/
 
     }
 }

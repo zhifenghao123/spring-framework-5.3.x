@@ -8,7 +8,7 @@ import com.hao.javaConfig5.component.Order;
 import com.hao.javaConfig5.component.Product;
 
 /**
- * AnnotationConfigApplicationContextMain1 class
+ * AnnotationConfigApplicationContextMain5 class
  * @Import通过快速导入的方式实现把实例加入Spring的容器中。
  * 将实例注入Spring容器的方式有很多中，@Import注解功能相对比较强大，这个注解可以用于以更加灵活便捷的方式将Bean注入到Spring容器中。
  * (@Import注解可以用于导入第三方包 ，当然@Bean注解也可以，但是@Import注解快速导入的方式更加便捷)

@@ -8,7 +8,7 @@ import com.hao.javaConfig3.component.Order;
 import com.hao.javaConfig3.component.Product;
 
 /**
- * AnnotationConfigApplicationContextMain1 class
+ * AnnotationConfigApplicationContextMain3 class
  * 在Spring XML中使用@ImportResource注释
  * @Configuration类可以在Spring XML文件中声明为常规的Spring <bean>定义。还可以使用@ImportResource注释将Spring
  * XML配置文件导入@Configuration类。

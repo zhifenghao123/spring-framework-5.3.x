@@ -9,7 +9,7 @@ import com.hao.javaConfig2.component.Order;
 import com.hao.javaConfig2.component.Product;
 
 /**
- * AnnotationConfigApplicationContextMain1 class
+ * AnnotationConfigApplicationContextMain2 class
  * Bootstrapping @Configuration classes ：Via Spring <beans> XML
  * 通过Spring <beans> XML引导@Configuration配置类
  * 注意：对应的xml配置中，<context:annotation-config/>是必需的，以便启用ConfigurationClassPostProcessor和其他与注释相关的后期处理器，以便处理@Configuration类。
