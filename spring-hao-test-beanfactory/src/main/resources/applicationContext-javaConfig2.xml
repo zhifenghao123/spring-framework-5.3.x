@@ -8,14 +8,6 @@
         https://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:annotation-config/>
+    <bean class="com.hao.javaConfig2.AppConfig"/>
 
-    <bean id="product" class="com.hao.xml4.component.Product">
-        <property name="productId" value="11111"></property>
-        <property name="productName" value="orange"></property>
-        <property name="price" value="5.4"></property>
-    </bean>
-    <bean id="order" class="com.hao.xml4.component.Order">
-        <property name="orderId" value="22222"></property>
-        <property name="userAccountId" value="haozhifeng"></property>
-    </bean>
 </beans>

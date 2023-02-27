@@ -1,7 +1,4 @@
-package com.hao.javaConfig1.component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+package com.hao.javaConfig2.component;
 
 /**
  * Product class

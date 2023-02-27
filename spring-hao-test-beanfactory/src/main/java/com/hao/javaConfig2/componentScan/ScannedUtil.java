@@ -1,4 +1,4 @@
-package com.hao.javaConfig1.componentScan;
+package com.hao.javaConfig2.componentScan;
 
 import org.springframework.stereotype.Component;
 
