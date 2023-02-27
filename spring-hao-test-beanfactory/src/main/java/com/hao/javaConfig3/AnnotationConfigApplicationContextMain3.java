@@ -16,7 +16,7 @@ import com.hao.javaConfig3.component.Product;
  * @author haozhifeng
  * @date 2023/02/23
  */
-public class AnnotationConfigApplicationContextMain1 {
+public class AnnotationConfigApplicationContextMain3 {
     public static void main(String[] args) {
         AnnotationConfigApplicationContext annotationConfigApplicationContext =
                 new AnnotationConfigApplicationContext(AppConfig.class);

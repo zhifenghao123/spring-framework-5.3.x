@@ -17,7 +17,7 @@ import com.hao.javaConfig2.component.Product;
  * @author haozhifeng
  * @date 2023/02/23
  */
-public class AnnotationConfigApplicationContextMain1 {
+public class ClassPathXmlApplicationContextMain2 {
     public static void main(String[] args) {
         ClassPathXmlApplicationContext xmlApplicationContext =
                 new ClassPathXmlApplicationContext("applicationContext-javaConfig2.xml");
