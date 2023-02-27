@@ -25,6 +25,7 @@ import com.hao.javaConfig1.component.Product;
  * @date 2023/02/23
  */
 @Configuration
+//@Configuration注解的proxyBeanMethods属性值默认为true，使用proxyBeanMethods=true可以保障调用此方法得到的对象是从容器中获取的而不是重新创建的
 @ComponentScan(basePackages = "com.hao.javaConfig1.componentScan")
 //@EnableAspectJAutoProxy//(proxyTargetClass = true)
 public class AppConfig {
