@@ -3,6 +3,7 @@ package com.hao.javaConfig7;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import com.hao.javaConfig7.component.Comment;
 import com.hao.javaConfig7.component.Order;
 import com.hao.javaConfig7.component.Product;
 
@@ -23,9 +24,9 @@ public class AnnotationConfigApplicationContextMain7 {
         AnnotationConfigApplicationContext annotationConfigApplicationContext =
                 new AnnotationConfigApplicationContext(AppConfig.class);
 
-        Product product = annotationConfigApplicationContext.getBean(Product.class);
+       /* Product product = annotationConfigApplicationContext.getBean(Product.class);
         Order order = annotationConfigApplicationContext.getBean(Order.class);
-        //Comment comment = annotationConfigApplicationContext.getBean(Comment.class);
+        Comment comment = annotationConfigApplicationContext.getBean(Comment.class);*/
 
         System.out.println("--------------------");
         String[] beanDefinitionNames = annotationConfigApplicationContext.getBeanDefinitionNames();
@@ -38,12 +39,11 @@ public class AnnotationConfigApplicationContextMain7 {
             }
         }
         System.out.println("--------------------");
-        System.out.println(product);
+        /*System.out.println(product);
         System.out.println(order);
-        //System.out.println(comment);
+        System.out.println(comment);
         System.out.println("--------------------");
-        //System.out.println("order.getProduct == comment.getProduct 为 ：" + (order.getProduct() == comment.getProduct
-        // ()));
+        System.out.println("order.getProduct == comment.getProduct 为 ：" + (order.getProduct() == comment.getProduct()));*/
 
     }
 }

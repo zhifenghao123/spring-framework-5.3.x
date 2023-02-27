@@ -1,11 +1,7 @@
-package com.hao.javaConfig5;
+package com.hao.javaConfig7;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import com.hao.javaConfig5.component.Comment;
-import com.hao.javaConfig5.component.Order;
-import com.hao.javaConfig5.component.Product;
 
 /**
  *
@@ -13,6 +9,6 @@ import com.hao.javaConfig5.component.Product;
  * @date 2023/02/23
  */
 @Configuration
-@Import(MyImportSelector.class)
+@Import(MyImportBeanDefinitionRegister.class)
 public class AppConfig {
 }

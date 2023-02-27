@@ -1,4 +1,4 @@
-package com.hao.javaConfig5.component;
+package com.hao.javaConfig7.component;
 
 /**
  * Order class
