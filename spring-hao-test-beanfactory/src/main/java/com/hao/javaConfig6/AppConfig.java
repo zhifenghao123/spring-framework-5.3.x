@@ -1,11 +1,11 @@
-package com.hao.javaConfig5;
+package com.hao.javaConfig6;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import com.hao.javaConfig5.component.Comment;
-import com.hao.javaConfig5.component.Order;
-import com.hao.javaConfig5.component.Product;
+import com.hao.javaConfig6.component.Comment;
+import com.hao.javaConfig6.component.Order;
+import com.hao.javaConfig6.component.Product;
 
 /**
  *
@@ -13,6 +13,6 @@ import com.hao.javaConfig5.component.Product;
  * @date 2023/02/23
  */
 @Configuration
-@Import({Product.class, Order.class, Comment.class})
+@EnableMyImport(type = 1)
 public class AppConfig {
 }

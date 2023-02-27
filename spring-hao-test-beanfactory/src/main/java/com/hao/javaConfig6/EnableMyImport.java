@@ -1,4 +1,4 @@
-package com.hao.javaConfig5;
+package com.hao.javaConfig6;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -19,4 +19,5 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Import(MyImportSelector.class)
 public @interface EnableMyImport {
+    int type() default 0;
 }
