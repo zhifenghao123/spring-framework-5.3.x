@@ -1,7 +1,4 @@
-package com.hao.annotationConfig.component;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+package com.hao.javaConfig7.component;
 
 /**
  * Order class
@@ -9,11 +6,9 @@ import org.springframework.stereotype.Component;
  * @author haozhifeng
  * @date 2023/02/23
  */
-@Component
 public class Order {
     private String orderId;
     private String userAccountId;
-    @Autowired
     private Product product;
 
     public String getOrderId() {

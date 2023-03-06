@@ -1,9 +1,4 @@
-package com.hao.annotationConfig.component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
-import org.springframework.stereotype.Component;
+package com.hao.javaConfig5.component;
 
 /**
  * Product class
@@ -11,7 +6,6 @@ import org.springframework.stereotype.Component;
  * @author haozhifeng
  * @date 2023/02/23
  */
-@Component
 public class Product {
     private String productId;
     private String productName;
@@ -41,13 +35,4 @@ public class Product {
         this.price = price;
     }
 
-    @PostConstruct
-    public void postConstruct() {
-        System.out.println("in Product : @PostConstruct");
-    }
-
-    @PreDestroy
-    public void preDestroy() {
-        System.out.println("in Product : @PreDestroy");
-    }
 }
