@@ -1,3 +1,9 @@
 ProcessOn模板社区-Spring启动流程 https://v3.processon.com/view/60ed63ae1efad4073201e103?fromnew=1#pc
 
 spring扩展接口执行流程 https://v3.processon.com/view/612318b37d9c0856876bb0de?fromnew=1
+
+https://blog.csdn.net/Wisimer/article/details/110949420
+https://blog.csdn.net/Wisimer/article/details/111033393?spm=1001.2014.3001.5502
+https://blog.csdn.net/Wisimer/article/details/110946242?spm=1001.2014.3001.5502
+
+https://zhuanlan.zhihu.com/p/82136894
