@@ -295,8 +295,22 @@ class ConfigurationClassParser {
 			throws IOException {
 
 		// 1、首先处理内部类，处理内部类时，最终还是调用doProcessConfigurationClass()方法
+		// 处理@Component注解和@Configuration注解。@Configuration注解上也标注的是@Component，被@Configuration标注的配置类本身也是一个bean组件
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
+			// 处理内部类，类似如下
+			/**
+			 * @Component
+			 * @Configuration
+			 * class ClassA {
+			 * 		@Component
+			 * 		@Configuration
+			 * 		@ComponentScan({""})
+			 *		class ClassB {
+			 *
+			 *		}
+			 * }
+			 */
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
@@ -379,6 +393,7 @@ class ConfigurationClassParser {
 		}
 
 		// 处理接口定义的方法
+		// 处理接口的默认实现方法，jdk8之后，接口中的方法也可以有默认实现。所以默认接口中默认实现的方法上也可能标注有@Bean注解
 		// Process default methods on interfaces
 		processInterfaces(configClass, sourceClass);
 
