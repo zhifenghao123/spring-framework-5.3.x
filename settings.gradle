@@ -56,6 +56,8 @@ settings.gradle.projectsLoaded {
 		}
 	}
 }
-include 'spring-hao-test'
-include 'spring-hao-test-beanfactory'
+/*include 'spring-hao-test'*/
+include 'spring-hao-test:spring-hao-test-beanfactory'
+include 'spring-hao-test:spring-hao-test-aop'
+/*findProject(':spring-hao-test:spring-hao-test-aop')?.name = 'spring-hao-test-aop'*/
 
