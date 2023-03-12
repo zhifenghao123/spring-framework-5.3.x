@@ -1,0 +1,45 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+|#pink|ConfigurationClassPostProcessor|
+start
+:postProcessBeanDefinitionRegistry();
+:processConfigBeanDefinitions();
+group 解析阶段
+    :遍历筛选配置类、多个配置类排序等等;
+    :初始化一个ConfigurationClassParser解析器
+    ConfigurationClassParser parser = new ConfigurationClassParser(...);
+    :配置类解析
+    parser.parse();
+end group
+|#LightCyan|ConfigurationClassParser|
+    group 循环并递归解析处理配置类
+        :processConfigurationClass();
+        :doProcessConfigurationClass();
+        group 真正处理解析配置类
+        :(1)递归处理内部类;
+        :(2)处理@PropertySource注解;
+        :(3)处理@ComponentScan注解;
+        :(4)处理@Import注解
+        a.导入实现ImportSelector接口的类：
+            直接调用selectImports方法返回的全路径类名
+        b.对于DeferredImportSelector接口的实现类特殊处理：
+            仅仅存入到deferredImportSelectors，标记记录下来，在最后处理
+        c.导入ImportBeanDefinitionRegistrar接口实现类：
+            放入到importBeanDefinitionRegistrars中后续load;
+        :(5)处理@ImportResource注解;
+        :(6)处理@Bean修饰的方法;
+        :(7)处理接口定义的方法;
+        :(8)处理父类;
+        end group
+        :处理deferredImportSelectors集合种类
+        this.deferredImportSelectorHandler.process();
+    end group
+|#pink|ConfigurationClassPostProcessor|
+group 注册阶段
+    :this.reader = new ConfigurationClassBeanDefinitionReader();
+    :this.reader.loadBeanDefinitions(configClasses);
+end group
+    :......;
+stop
+@enduml
