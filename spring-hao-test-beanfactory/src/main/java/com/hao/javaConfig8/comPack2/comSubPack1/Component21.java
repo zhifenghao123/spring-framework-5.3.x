@@ -1,4 +1,4 @@
-package com.hao.javaConfig8.comPak2.comSubPack1;
+package com.hao.javaConfig8.comPack2.comSubPack1;
 
 import org.springframework.stereotype.Component;
 

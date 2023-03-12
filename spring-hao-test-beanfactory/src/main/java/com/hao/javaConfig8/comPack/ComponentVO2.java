@@ -1,4 +1,6 @@
-package com.hao.javaConfig8.comPack;/**
+package com.hao.javaConfig8.comPack;
+
+/**
  * ComponentVO2 class
  *
  * @author haozhifeng

@@ -1,0 +1,5 @@
+1、RootBeanDefinition
+2、GenericBeanDefinition
+3、ScannedGenericBeanDefinition:通过@ComponentScan得到，new ScannedGenericBeanDefinition(metadataReader)
+4、AnnotatedGenericBeanDefinition:@Import进来的和内部类，new AnnotatedBeanDefinition(metadata)
+5、ConfigurationClassBeanDefinition：@Bean解析得到，new ConfigurationClassBeanDefinition(configClass,metadata)
