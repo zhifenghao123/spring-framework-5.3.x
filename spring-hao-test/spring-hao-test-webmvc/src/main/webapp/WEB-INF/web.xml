@@ -1,0 +1,35 @@
+<web-app>
+    <display-name>Archetype Created Web Application</display-name>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:spring.xml</param-value>
+    </context-param>
+
+    <servlet>
+        <servlet-name>dispatcherServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:spring-mvc.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>dispatcherServlet</servlet-name>
+        <!--
+        设置springMVC的核心控制器所能处理的请求的请求路径
+        标签中使用/和/*的区别：
+        (1)/所匹配的请求可以是/login或.html或.js或.css方式的请求路径，但是/不能匹配.jsp请求路径的请求,
+        因此就可以避免在访问jsp页面时，该请求被DispatcherServlet处理，从而找不到相应的页面
+        (2)/*则能够匹配所有请求，例如在使用过滤器时，若需要对所有请求进行过滤，就需要使用/*的写法
+        -->
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+</web-app>
