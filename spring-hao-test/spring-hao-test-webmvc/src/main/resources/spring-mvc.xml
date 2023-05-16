@@ -8,10 +8,19 @@
         http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
     <!--开启SpringMVC的扫描。扫描控制层组件-->
-    <context:component-scan base-package="com.hao.springmvc.controller"></context:component-scan>
+    <!--
+    若Spring的IOC容器和SpringMVC的IOC容器扫描的包有重合的部分，就会导致有的 bean 会被创建两次.
+    如果某个包下面的bean会被扫描多次，就会出现多个bean的问题。
+    解决方案
+        使用Spring的IOC容器扫描的包和SpringMVC的IOC容器扫描的包没有重合的部分，可以使用 exclude-filter 和 include-filter 子节点来规定只能扫描的注解：
+　　     由于SpringMVC是对Servlet的封装，我们可以只用来扫描控制层；spring 的配置文件扫描除了控制层之外的 bean，还可以用于配置数据源，整合其他框架，事务等；
+     -->
+    <context:component-scan base-package="com.hao.springmvc.controller">
+        <!--  只扫描controller层 -->
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
 
-    <!-- 开启mvc的注解驱动   -->
-    <mvc:annotation-driven/>
     <bean  class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <!-- 让视图支持jstl标签库    注意   1.项目中要导入jstl1-1.2.jar -->
         <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
@@ -28,5 +37,27 @@
 
     <!--解决拦截器拦截静态资源的请求问题-->
     <mvc:default-servlet-handler/>
+
+
+    <!--  配置 controller返回对象 ，集合 自动转成json串 的处理映射器，和 <mvc:annotation-driven></mvc:annotation-driven> 注解驱动实现相同功能
+     <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+         <property name="messageConverters">
+             <list>
+                 <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"></bean>
+             </list>
+         </property>
+     </bean>
+       -->
+
+    <!-- 开启spring mvc的注解驱动 -->
+    <!--
+    在spring mvc的各个组件中，处理器映射器、处理器适配器、视图解析器成为spring mvc的三大组件
+    （1）<mvc:annotation-driven> Spring MVC用来提供Controller请求转发，json自动转换等功能。
+    （2）默认底层会集成jackson进行对象或集合的json格式字符串的转换，且使用它时候，自动加载ReuestMappingHandlerMapping(处理映射器)
+        和RequestMappingHandlerAdapter(处理适配器)；
+    （3）在spirng-xml的配置文件中使用<mvc:annotation-driven>替代注解处理器和适配器的配置。
+    比如和bean标签 <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">具有相同功能
+    -->
+    <mvc:annotation-driven/>
 
 </beans>
