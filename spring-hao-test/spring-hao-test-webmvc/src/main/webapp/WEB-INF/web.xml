@@ -1,6 +1,30 @@
 <web-app>
     <display-name>Archetype Created Web Application</display-name>
 
+    <!-- SpringMVC是运行在Spring的环境下，基于SpringMVC的Web项目配置，通常有两种：
+    （1）不需要整合。
+    即：把service、dao、数据源、事务，整合其他框架放在springmvc的配置文件中。
+    这样子在技术层面上是可以实现的，但是这样显得的不清晰。
+    具体实现是将service、dao、数据源、事务，整合其他框架等放在Spring的配置文件，然后使用import节点将Spring配置文件导入到SpringMVC配置文件这种
+　　　　示例：在 springmvc.xml 中导入 spring.xml 文件
+        <import resource="spring.xml"/>
+        注：当两个配置文件中扫描的包有重合的时候某些bean会被初始化2次。解决方案：在扫描包的子节点下配置 exclude-filter 和 include-filter
+        也可以直接将相关配置写在springmvc配置文件中，过于繁多。
+　　　这样不整合造成的问题：需要将 spring 管理的内容都交给 springMVC 管理，这样会造成业务逻辑混乱
+    （2）需要整合。
+    这样做分工明确。SpringMVC的配置文件就来配置网站转发逻辑以及网站功能有关的（视图解析器、文件上传解析器、支持ajax）；
+    Spring的配置文件来配置和业务有关的（service、dao、数据源、事务，整合其他框架）
+
+    此种情况下，Spring 的配置文件在什么时候加载？怎么加载？（注意：Spring 的配置文件必须在项目启动时加载，且要在 Servlet 加载前加载。）
+    解决方法：使用监听器（自定义ServletContextListener实现类。 tomcat加载顺序listener -> filter -> servlet执行顺序，监听器首先执行），
+    可以在ServletContext加载时，通过监听器加载Spring的配置文件，创建 Spring容器； 也可以使用Spring提供的监听器（ContextLoaderListener）。
+
+    此种情况下实际上是在ContextLoaderListener初始化时创建了一个父容器（Spring配置文件对应的bean），而在DispatcherServlet初始化时
+    创建了一个子容器（Spring MVC配置文件对应的bean），且子容器能够调用访问父容器中的 bean，而父容器不能够调用访问子容器中的 bean。也即：
+    SpringMVC 的 Ioc 容器中的 bean 可以来应用 Spring Ioc 容器中的 bean，返回来却不行！
+    Spring Ioc 容器中的 bean 却不能引用 SpringMVC Ioc 容器中的 bean。
+     -->
+
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
