@@ -1,0 +1,71 @@
+对于Tomcat容器，加载的组件顺序为：listener -> filter -> servlet执行顺序
+对于基于SpringMVC的Web项目，web.xml首先会配置一个listener类(org.springframework.web.context.ContextLoaderListener)
+，这个类实现了ServletContextListener，它能够监听ServletContext对象的生命周期，实际上就是监听 Web 应用的生命周期 。
+当Servlet 容器启动(contextInitialized)或终止Web应用(contextDestroyed) 时，会触发ServletContextEvent 事件，该事件由 ServletContextListener 来处理。
+
+1、当容器启动时，ContextLoaderListener.contextInitialized执行方法初始化ROOT
+applicationContext：createWebApplicationContext方法创建applicationContext，
+如果web.xml没有配置contextClass，则spring默认从ContextLoader.properties读取配置，找到XmlWebApplicationContext类，然后反射进行实例化。
+随后会从web.xml配置找到contextConfigLocation，然后设置到XmlWebApplicationContext的configLocation属性中，最后调用refresh方法。
+2、调用refresh方法前，可以通过在web.xml中定义"globalInitializerClasses"或者"contextInitializerClasses"属性，自定义ApplicationContextInitializer
+接口实现类，随后会通过反射实例化这些实现类，最后循环调用实现类的initialize(wac)方法。
+3、将创建的applicationContext与servletContext进行了关联，servletContext.setAttribute(WebApplicationContext
+.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
+可通过WebApplicationContextUtils.getWebApplicationContext(ServletContext sc);得到WebApplicationContext(ROOT applicationContext)。
+
+web.xml中对于DispatcherServlet的配置一般如下
+<servlet>
+    <servlet-name>springmvc</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:spring-mvc.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+<servlet-mapping>
+    <servlet-name>springmvc</servlet-name>
+    <url-pattern>/</url-pattern>
+</servlet-mapping>
+
+DispatcherServlet为核心配置类，由于DispatcherServlet继承HttpServlet，所以符合servlet的生命周期：
+servlet的初始化阶段结束(servlet容器启动时会装载servlet并调用init方法，servlet生命周期内只调用一次init方法)；
+客户端请求响应阶段（servlet接收到客户端请求后，会调用servlet的service方法）；
+终止(当web应用终止或者容器关闭或容器重新装载servlet新实例的时候，容器调用servlet的destroy方法，在distroy方法中可以释放对应servlet资源)；
+
+servlet初始化阶段：
+类继承关系DispatcherServlet->FrameworkServlet->HttpServletBean->HttpServlet。
+在HttpservletBean中重写的init()方法：
+（1）.从xml中得到init parameter设置到当前类中，此时contextConfigLocation属性已设置到FrameworkServlet类的contextConfigLocation属性中（set注入）。
+（2）.initServletBean方法定义。
+FrameworkServlet.initServletBean()会创建web applicationContext：
+（1）.如果没有配置contextClass属性，就默认为XmlWebApplicationContext。
+（2）.反射实例化
+（3）.将contextConfigLocation属性设置到创建的XmlWebApplicationContext.configLocation属性中。
+（4）.refresh方法执行。
+（5）.webApplicationContext创建并执行refresh方法创建bean后，onRefresh(wac)方法执行。
+DispatcherServlet.onRefresh重写了方法，此方法初始化一系列策略initStrategies：
+（1）.MultipartResolver
+（2）.LocaleResolver
+（3）.ThemeResolver
+（4）.HandlerMapping
+（5）.HandlerAdapter
+（6）.HandlerExceptionResolver
+（7）.RequestToViewNameTranslator
+（8）.ViewResolver
+（9）.FlashMapManager
+
+客户端请求响应阶段：
+FrameworkServlet.service重写了此方法，后面转到FrameworkServlet重写的doGet、doPost方法，然后转到processRequest方法，随后调用doService方法。
+DispatcherServlet.doService重写了此方法：request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+可以从request中获取dispatcherServlet applicationContext。 最终转到doDispatch核心方法。
+
+servlet终止阶段：
+关闭applicationContext ： ConfigurableApplicationContext.close();
+
+
+
+
+
+
+附参考： https://blog.csdn.net/u011079274/article/details/129067675
