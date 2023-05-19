@@ -107,10 +107,13 @@ public final class ModelFactory {
 	public void initModel(NativeWebRequest request, ModelAndViewContainer container, HandlerMethod handlerMethod)
 			throws Exception {
 
+		// 1、解析并合并@SessionAttributes注解
 		Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
 		container.mergeAttributes(sessionAttributes);
+		// 2、调用被@ModelAttribute注解的方法
 		invokeModelAttributeMethods(request, container);
 
+		// 3、查找标注了@SessionAttributes、@ModelAttribute的方法参数，确保解析过程中不会发生异常
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
 			if (!container.containsAttribute(name)) {
 				Object value = this.sessionAttributesHandler.retrieveAttribute(request, name);
