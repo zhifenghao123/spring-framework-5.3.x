@@ -1056,7 +1056,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
-				// *******************根据request找到Handler*******************
+				// *******************核心1：根据request找到Handler*******************
 				// Determine handler for the current request.
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
@@ -1064,7 +1064,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					return;
 				}
 
-				//*******************根据Handler找到HandlerAdapter*******************
+				//*******************核心2：根据Handler找到HandlerAdapter*******************
 				// Determine handler adapter for the current request.
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
@@ -1084,7 +1084,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					return;
 				}
 
-				// *******************使用Handler处理请求*******************
+				// *******************核心3：使用Handler处理请求*******************
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
@@ -1105,7 +1105,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
-			//*******************处理返回结果，包括异常、渲染页面、触发拦截器的afterCompletion方法*******************
+			//*******************核心4：处理返回结果，包括异常、渲染页面、触发拦截器的afterCompletion方法*******************
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
