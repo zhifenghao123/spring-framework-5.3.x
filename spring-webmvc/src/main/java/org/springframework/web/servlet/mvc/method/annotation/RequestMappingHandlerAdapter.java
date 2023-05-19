@@ -977,14 +977,17 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	}
 
 	private ModelFactory getModelFactory(HandlerMethod handlerMethod, WebDataBinderFactory binderFactory) {
+		// 1.处理@SessionAttributes注解
 		SessionAttributesHandler sessionAttrHandler = getSessionAttributesHandler(handlerMethod);
 		Class<?> handlerType = handlerMethod.getBeanType();
+		// 2.处理@ModelAttribute注解
 		Set<Method> methods = this.modelAttributeCache.get(handlerType);
 		if (methods == null) {
 			methods = MethodIntrospector.selectMethods(handlerType, MODEL_ATTRIBUTE_METHODS);
 			this.modelAttributeCache.put(handlerType, methods);
 		}
 		List<InvocableHandlerMethod> attrMethods = new ArrayList<>();
+		// 3.优先处理全局@ModelAttribute注解的方法，例如被@ControllerAdvice标注的类中存在被@ModelAttribute注解的方法，则优先处理
 		// Global methods first
 		this.modelAttributeAdviceCache.forEach((controllerAdviceBean, methodSet) -> {
 			if (controllerAdviceBean.isApplicableToBeanType(handlerType)) {
@@ -994,10 +997,14 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				}
 			}
 		});
+		// 4.循环所有标注了@ModelAttribute注解的方法，并创建InvocableHandlerMethod对象
+		// InvocableHandlerMethod:负责具体的HandlerMethod的调用、参数解析等工作
 		for (Method method : methods) {
 			Object bean = handlerMethod.getBean();
 			attrMethods.add(createModelAttributeMethod(binderFactory, bean, method));
 		}
+		// 5.返回ModelFactory对象
+		// ModelFactory:协助在控制器方法调用之前初始化模型，并在调用之后更新它。
 		return new ModelFactory(attrMethods, binderFactory, sessionAttrHandler);
 	}
 
