@@ -817,13 +817,15 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			HttpServletResponse response, HandlerMethod handlerMethod) throws Exception {
 
 		ModelAndView mav;
-		// 检查请求
+		// 1.检测当前请求，验证请求方法合法性和session合法性
 		checkRequest(request);
 
+		// 2.根据synchronizeOnSession值判断，当前请求是否需串行化访问。
 		// Execute invokeHandlerMethod in synchronized block if required.
 		if (this.synchronizeOnSession) {
 			HttpSession session = request.getSession(false);
 			if (session != null) {
+				// 获取最佳互斥锁，即同步当前回话对象；如未能获取到互斥锁，将返回HttpSession对象本身
 				Object mutex = WebUtils.getSessionMutex(session);
 				synchronized (mutex) {
 					//调用handler的方法
@@ -831,13 +833,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				}
 			}
 			else {
-				//调用handler的方法
+				// 即无最佳互斥锁，也未能获取到HttpSession，则当前回话无需串行化访问
 				// No HttpSession available -> no mutex necessary
 				mav = invokeHandlerMethod(request, response, handlerMethod);
 			}
 		}
 		else {
-			//调用handler的方法
+			// 3.相应信息不包含Cache-Control
 			// No synchronization on session demanded at all...
 			mav = invokeHandlerMethod(request, response, handlerMethod);
 		}
