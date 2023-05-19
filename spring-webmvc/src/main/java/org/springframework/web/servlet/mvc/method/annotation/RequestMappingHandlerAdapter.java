@@ -563,19 +563,35 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	}
 
 
+	/**
+	 * RequestMappingHandlerAdapter 实现了InitializingBean 接口，因此在Bean实例创建之后，会调用它的afterPropertiesSet()方法
+	 */
 	@Override
 	public void afterPropertiesSet() {
+		/**
+		 * 在SpringMVC中，@ControllerAdvice注解相关的方法，用来做全局异常统一处理
+		 * 这里主要就是解析@ControllerAdvice注解的类，将@RequestMapping，@ModelAttribute，@InitBinder方法放入缓存中，以当前bean为key。
+		 */
 		// Do this first, it may add ResponseBody advice beans
 		initControllerAdviceCache();
 
+		/**
+		 * 初始化参数解析器HandlerMethodArgumentResolver,并把所有的参数解析器都放入HandlerMethodArgumentResolverComposite实例中
+		 */
 		if (this.argumentResolvers == null) {
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultArgumentResolvers();
 			this.argumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
 		}
+		/**
+		 * 也是初始化参数解析器HandlerMethodArgumentResolver,并把所有的参数解析器都放入HandlerMethodArgumentResolverComposite实例中
+		 */
 		if (this.initBinderArgumentResolvers == null) {
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultInitBinderArgumentResolvers();
 			this.initBinderArgumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
 		}
+		/**
+		 * 初始化返回值处理器集合HandlerMethodReturnValueHandler，并把所有的返回值处理器都放入HandlerMethodReturnValueHandlerComposite中
+		 */
 		if (this.returnValueHandlers == null) {
 			List<HandlerMethodReturnValueHandler> handlers = getDefaultReturnValueHandlers();
 			this.returnValueHandlers = new HandlerMethodReturnValueHandlerComposite().addHandlers(handlers);
