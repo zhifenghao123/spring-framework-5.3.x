@@ -1052,9 +1052,11 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//*******************检查是不是上传请求**************************
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
+				// *******************根据request找到Handler*******************
 				// Determine handler for the current request.
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
@@ -1062,9 +1064,11 @@ public class DispatcherServlet extends FrameworkServlet {
 					return;
 				}
 
+				//*******************根据Handler找到HandlerAdapter*******************
 				// Determine handler adapter for the current request.
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
+				// *******************处理get、head请求的Last-Modified*******************
 				// Process last-modified header, if supported by the handler.
 				String method = request.getMethod();
 				boolean isGet = HttpMethod.GET.matches(method);
@@ -1075,17 +1079,21 @@ public class DispatcherServlet extends FrameworkServlet {
 					}
 				}
 
+				//*******************执行拦截器的PreHandler方法*******************
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
+				// *******************使用Handler处理请求*******************
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
+				//*******************如果需要异步处理，则直接返回*******************
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
 
+				//*******************当view为空时(Controller方法返回void)，根据request设置默认的view**************
 				applyDefaultViewName(processedRequest, mv);
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
@@ -1097,6 +1105,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			//*******************处理返回结果，包括异常、渲染页面、触发拦截器的afterCompletion方法*******************
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
@@ -1107,6 +1116,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					new NestedServletException("Handler processing failed", err));
 		}
 		finally {
+			//*******************如果需要异步处理*******************
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				// Instead of postHandle and afterCompletion
 				if (mappedHandler != null) {
@@ -1114,6 +1124,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 			}
 			else {
+				// *******************删除上传请求的资源*******************
 				// Clean up any resources used by a multipart request.
 				if (multipartRequestParsed) {
 					cleanupMultipart(processedRequest);
