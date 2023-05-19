@@ -377,10 +377,21 @@ public abstract class WebContentGenerator extends WebApplicationObjectSupport {
 	protected final void checkRequest(HttpServletRequest request) throws ServletException {
 		// Check whether we should support the request method.
 		String method = request.getMethod();
+		/**
+		 * this.supportedMethods 其实一般不配置，为null
+		 * 当 supportedMethods 不为空的时候，去检查是否支持请求方法。例如GET,POST
+		 * 可以通过restrictDefaultSupportedMethods指定只处理GET,POST,HEAD,不过这个参数很少用
+		 * 而且改起来相当麻烦，已经在抽象父类AbstractHandlerMethodAdapter 中写死为false了。
+		 *
+		 */
 		if (this.supportedMethods != null && !this.supportedMethods.contains(method)) {
 			throw new HttpRequestMethodNotSupportedException(method, this.supportedMethods);
 		}
 
+		/**
+		 * 检查session是否存在
+		 * 默认是不检查的，因为requireSession 默认为false；
+		 */
 		// Check whether a session is required.
 		if (this.requireSession && request.getSession(false) == null) {
 			throw new HttpSessionRequiredException("Pre-existing session required but none found");
