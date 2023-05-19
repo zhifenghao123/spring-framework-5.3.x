@@ -934,6 +934,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logRequest(request);
 
+		//***************如果是include请求，则对request进行快照备份***********************
 		// Keep a snapshot of the request attributes in case of an include,
 		// to be able to restore the original attributes after the include.
 		Map<String, Object> attributesSnapshot = null;
@@ -948,6 +949,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 		}
 
+		//****************************** 对request设置一些属性****************************.
 		// Make framework objects available to handlers and view objects.
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
@@ -974,6 +976,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 		finally {
 			if (!WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+				// 还原快照备份（如果是include请求）
 				// Restore the original attribute snapshot, in case of an include.
 				if (attributesSnapshot != null) {
 					restoreAttributesAfterInclude(request, attributesSnapshot);
