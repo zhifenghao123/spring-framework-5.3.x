@@ -603,6 +603,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			return;
 		}
 
+		// 获取@ControllerAdvice注解的bean
 		List<ControllerAdviceBean> adviceBeans = ControllerAdviceBean.findAnnotatedBeans(getApplicationContext());
 
 		List<Object> requestResponseBodyAdviceBeans = new ArrayList<>();
@@ -612,14 +613,27 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			if (beanType == null) {
 				throw new IllegalStateException("Unresolvable type for ControllerAdviceBean: " + adviceBean);
 			}
+			/**
+			 * 查询当前Bean被@RequestMapping和@ModelAttribute注解的方法
+			 * 把他们的方法对象放入this.modelAttributeAdviceCache集合，key = 当前bean对象
+			 */
 			Set<Method> attrMethods = MethodIntrospector.selectMethods(beanType, MODEL_ATTRIBUTE_METHODS);
 			if (!attrMethods.isEmpty()) {
 				this.modelAttributeAdviceCache.put(adviceBean, attrMethods);
 			}
+			/**
+			 * 查询当前Bean被InitBinder注解的方法
+			 * 把他们的方法对象放入this.initBinderAdviceCache集合，key = 当前bean对象
+			 */
 			Set<Method> binderMethods = MethodIntrospector.selectMethods(beanType, INIT_BINDER_METHODS);
 			if (!binderMethods.isEmpty()) {
 				this.initBinderAdviceCache.put(adviceBean, binderMethods);
 			}
+			/**
+			 * 判断beanType是不是RequestBodyAdvice或者ResponseBodyAdvice的父类,
+			 * 是的话把当前bean加入到requestResponseBodyAdviceBeans集合,
+			 * requestResponseBodyAdviceBeans集合不为空，则放入this.requestResponseBodyAdvice集合
+			 */
 			if (RequestBodyAdvice.class.isAssignableFrom(beanType) || ResponseBodyAdvice.class.isAssignableFrom(beanType)) {
 				requestResponseBodyAdviceBeans.add(adviceBean);
 			}
