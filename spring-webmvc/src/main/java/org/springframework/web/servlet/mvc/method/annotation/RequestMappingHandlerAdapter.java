@@ -887,26 +887,42 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	protected ModelAndView invokeHandlerMethod(HttpServletRequest request,
 			HttpServletResponse response, HandlerMethod handlerMethod) throws Exception {
 
+		/**
+		 * 将HttpServletRequest 和HttpServletResponse 封装为一个ServletWebRequest对象，
+		 * ServletWebRequest实现了NativeWebRequest接口，可以通过getNativeRequest方法和
+		 * getNativeResponse方法获取到将HttpServletRequest 和HttpServletResponse
+		 *
+		 */
 		ServletWebRequest webRequest = new ServletWebRequest(request, response);
 		try {
+			// 首先获取一个 WebDataBinderFactory 对象，该对象将用来构建 WebDataBinder。
 			WebDataBinderFactory binderFactory = getDataBinderFactory(handlerMethod);
+			// 获取一个 ModelFactory 对象，该对象用来初始化/更新 Model 对象
 			ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
 
+			// 接下来创建 ServletInvocableHandlerMethod 对象，一会方法的调用，将由它完成
 			ServletInvocableHandlerMethod invocableMethod = createInvocableHandlerMethod(handlerMethod);
+			// 这里自然就是应用参数解析器到invocableMethod里面
 			if (this.argumentResolvers != null) {
 				invocableMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
 			}
+			// 这里自然就是应用返回值到invocableMethod里面
 			if (this.returnValueHandlers != null) {
 				invocableMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
 			}
+			// 设置上面获取到的WebDataBinderFactory
 			invocableMethod.setDataBinderFactory(binderFactory);
 			invocableMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
 
+			// 造一个 ModelAndViewContainer 对象，简单理解为存储 Model 和 View的对象就行
 			ModelAndViewContainer mavContainer = new ModelAndViewContainer();
+			//  FlashMap 中的数据先添加进 ModelAndViewContainer 容器中
 			mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
+			// 初始化 Model
 			modelFactory.initModel(webRequest, mavContainer, invocableMethod);
 			mavContainer.setIgnoreDefaultModelOnRedirect(this.ignoreDefaultModelOnRedirect);
 
+			// 创建异步请求
 			AsyncWebRequest asyncWebRequest = WebAsyncUtils.createAsyncWebRequest(request, response);
 			asyncWebRequest.setTimeout(this.asyncRequestTimeout);
 
@@ -927,14 +943,18 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
 
+			//  调用 invokeAndHandle 方法去真正执行接口方法
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
+				// 如果是异步请求，则直接返回即可。
 				return null;
 			}
 
+			// 接下来调用 getModelAndView 方法去构造 ModelAndView 并返回
 			return getModelAndView(mavContainer, modelFactory, webRequest);
 		}
 		finally {
+			// 最后设置请求完成。
 			webRequest.requestCompleted();
 		}
 	}
