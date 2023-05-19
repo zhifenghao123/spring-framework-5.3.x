@@ -698,9 +698,13 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			}
 		}
 
+		// 设置web容器所属的servletContext
 		wac.setServletContext(getServletContext());
+		// 设置servletConfig
 		wac.setServletConfig(getServletConfig());
+		// 设置命名空间
 		wac.setNamespace(getNamespace());
+		// 设置监听器
 		wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
 
 		// The wac environment's #initPropertySources will be called in any case when the context
@@ -708,11 +712,15 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		// use in any post-processing or initialization that occurs below prior to #refresh
 		ConfigurableEnvironment env = wac.getEnvironment();
 		if (env instanceof ConfigurableWebEnvironment) {
+			// 刷新之前初始化一些属性资源
 			((ConfigurableWebEnvironment) env).initPropertySources(getServletContext(), getServletConfig());
 		}
 
+		// web容器的钩子方法,跟spring容器的BeanPostProcess差不多
 		postProcessWebApplicationContext(wac);
+		// 添加一些初始化器,如果没有设置就没有
 		applyInitializers(wac);
+		// 刷新容器就是走的spring容器刷新
 		wac.refresh();
 	}
 
