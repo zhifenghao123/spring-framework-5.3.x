@@ -62,4 +62,5 @@ include 'spring-hao-test:spring-hao-test-aop'
 /*findProject(':spring-hao-test:spring-hao-test-aop')?.name = 'spring-hao-test-aop'*/
 include 'spring-hao-test:spring-hao-test-webmvc'
 /*findProject(':spring-hao-test:spring-hao-test-webmvc')?.name = 'spring-hao-test-webmvc'*/
+include 'spring-hao-test:spring-hao-test-webmvc2'
 
