@@ -13,4 +13,7 @@ repositories {
 dependencies {
     api(project(":spring-webmvc"))
     providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    providedCompile "javax.servlet.jsp:javax.servlet.jsp-api:2.3.2-b02"
+    providedCompile "javax.servlet.jsp.jstl:javax.servlet.jsp.jstl-api:1.2.1"
+    providedCompile 'org.apache.taglibs:taglibs-standard-jstlel'
 }
