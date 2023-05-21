@@ -30,6 +30,7 @@ buildSrc/.gradle
 /src/asciidoc/build
 target/
 /spring-*/spring-*/build
+/spring-*/spring-*/spring-*/build
 
 # Eclipse artifacts, including WTP generated manifests
 .classpath
