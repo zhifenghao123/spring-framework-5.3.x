@@ -12,4 +12,5 @@ repositories {
 
 dependencies {
     api(project(":spring-webmvc"))
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
 }
