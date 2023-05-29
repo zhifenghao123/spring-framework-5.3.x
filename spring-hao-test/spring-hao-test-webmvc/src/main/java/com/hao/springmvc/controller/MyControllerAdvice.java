@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
  * @date 2023/05/21
  */
 @ControllerAdvice
-@SessionAttributes("name")
+//@SessionAttributes("name")
 public class MyControllerAdvice {
 
     // @InitBinder 方法 可以定义在全局的@ControllerAdvice bean中，
@@ -30,8 +30,8 @@ public class MyControllerAdvice {
         binder.registerCustomEditor(Date.class, new CustomDateEditor(sdf, false));
     }
 
-    @ModelAttribute("user")
+    /*@ModelAttribute("user")
     public String addString(@RequestParam("xxx") String value) {
         return value;
-    }
+    }*/
 }
