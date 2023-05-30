@@ -47,7 +47,7 @@ public class AccountControllerTest {
     }
 
     // 访问 http://localhost:8080/spring_hao_test_webmvc/testPathVariable/1
-    @RequestMapping({"testPathVariable"})
+    @RequestMapping({"testPathVariable/{id}"})
     @ResponseBody
     public String testDate(@PathVariable("id") Integer id) {
         return id + "-haotest";
