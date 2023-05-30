@@ -1,6 +1,7 @@
 package com.hao.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * User class
@@ -18,6 +19,8 @@ public class User implements Serializable {
      */
     private int age;
 
+    private List<String> hobbies;
+
     public String getName() {
         return name;
     }
@@ -32,5 +35,13 @@ public class User implements Serializable {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public List<String> getHobbies() {
+        return hobbies;
+    }
+
+    public void setHobbies(List<String> hobbies) {
+        this.hobbies = hobbies;
     }
 }
