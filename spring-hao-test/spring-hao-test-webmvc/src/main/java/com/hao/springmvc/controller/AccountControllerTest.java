@@ -53,7 +53,7 @@ public class AccountControllerTest {
         return id + "-haotest";
     }
 
-    // 访问 http://localhost:8080/spring_hao_test_webmvc/testRequestParam?name=hi
+    // 访问 http://localhost:8080/spring_hao_test_webmvc/testRequestParam?xname=hi
     // 访问 http://localhost:8080/spring_hao_test_webmvc/testRequestParam
     @RequestMapping({"testRequestParam"})
     @ResponseBody
