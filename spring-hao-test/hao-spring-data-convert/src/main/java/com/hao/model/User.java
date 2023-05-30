@@ -44,4 +44,13 @@ public class User implements Serializable {
     public void setHobbies(List<String> hobbies) {
         this.hobbies = hobbies;
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", hobbies=" + hobbies +
+                '}';
+    }
 }
