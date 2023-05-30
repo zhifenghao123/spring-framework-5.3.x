@@ -11,4 +11,10 @@ repositories {
 
 dependencies {
     api(project(":spring-context"))
+
+    api(project(":spring-web"))
+
+    api(project(":spring-test"))
+
+    implementation 'javax.servlet:javax.servlet-api:4.0.1'
 }
