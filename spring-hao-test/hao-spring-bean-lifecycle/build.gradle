@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+group 'org.springframework'
+version '5.3.24-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api(project(":spring-context"))
+    api 'org.aspectj:aspectjweaver:1.9.7'
+    api(project(":spring-jdbc"))
+}

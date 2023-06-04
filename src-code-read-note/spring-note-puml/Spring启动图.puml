@@ -1,0 +1,46 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+|#pink|AnnotationConfigApplicationContext|
+start
+
+group this();
+    :遍历筛选配置类、多个配置类排序等等;
+    :初始化一个ConfigurationClassParser解析器
+    ConfigurationClassParser parser = new ConfigurationClassParser(...);
+    :配置类解析
+    parser.parse();
+end group
+
+group register(componentClasses);
+    :遍历筛选配置类、多个配置类排序等等;
+    :初始化一个ConfigurationClassParser解析器
+    ConfigurationClassParser parser = new ConfigurationClassParser(...);
+    :配置类解析
+    parser.parse();
+end group
+
+group refresh();
+    :遍历筛选配置类、多个配置类排序等等;
+    :初始化一个ConfigurationClassParser解析器
+    ConfigurationClassParser parser = new ConfigurationClassParser(...);
+    :配置类解析
+    parser.parse();
+end group
+
+|#LightCyan|ConfigurationClassParser|
+    group 循环并递归解析处理配置类
+        :processConfigurationClass();
+        :doProcessConfigurationClass();
+
+        :处理deferredImportSelectors集合种类
+        this.deferredImportSelectorHandler.process();
+    end group
+|#pink|ConfigurationClassPostProcessor|
+group 注册阶段
+    :this.reader = new ConfigurationClassBeanDefinitionReader();
+    :this.reader.loadBeanDefinitions(configClasses);
+end group
+    :......;
+stop
+@enduml

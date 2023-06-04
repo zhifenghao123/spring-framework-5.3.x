@@ -65,3 +65,4 @@ include 'spring-hao-test:spring-hao-test-webmvc'
 include 'spring-hao-test:spring-hao-test-webmvc2'
 /*include 'spring-hao-test:hao-spring-data-convert'*/
 include 'spring-hao-test:hao-spring-data-convert'
+include 'spring-hao-test:hao-spring-bean-lifecycle'
