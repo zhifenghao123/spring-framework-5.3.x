@@ -313,6 +313,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		// 1.初始化BeanDefinitionHolder集合
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		// 2.从容器中拿到所有已经注册过的bean
+		// 这里默认会有6个，其中5个为Spring内置的，1个为AppConfig配置类
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
 		// 遍历已注册的bean数组，筛选出配置（不是所有的bean都是一个配置类的）。
