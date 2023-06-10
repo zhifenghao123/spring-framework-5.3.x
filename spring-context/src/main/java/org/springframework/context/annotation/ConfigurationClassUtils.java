@@ -104,6 +104,14 @@ abstract class ConfigurationClassUtils {
 					BeanPostProcessor.class.isAssignableFrom(beanClass) ||
 					AopInfrastructureBean.class.isAssignableFrom(beanClass) ||
 					EventListenerFactory.class.isAssignableFrom(beanClass)) {
+				// 说明一：如果是Spring内部注册的类，就提前返回，不认为是配置类。
+				// Spring启动默认注册的有5个:具体可见AnnotationConfigUtils#registerAnnotationConfigProcessors
+				// 【调用链：(1) AnnotationConfigApplicationContext#this(); (2)this.reader = new
+				// AnnotatedBeanDefinitionReader(this); (3)this(registry, getOrCreateEnvironment(registry));
+				// (4)AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);】
+				//  说明二：那如果应用程序开发中，写了一个Bean，且加了注解，且实现了BeanFactoryPostProcessor、BeanPostProcessor等等这四个，
+				// 难道也就不能成为配置类吗？ 不是的，是可以的。    因此应用程序开发的Bean，其BeanDefinition是AnnotatedBeanDefinition，
+				// 而不是AbstractBeanDefinition，只有Spring内部Bean才是AbstractBeanDefinition的
 				return false;
 			}
 			metadata = AnnotationMetadata.introspect(beanClass);
