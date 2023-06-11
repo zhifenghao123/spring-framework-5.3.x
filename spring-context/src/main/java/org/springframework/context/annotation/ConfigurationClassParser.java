@@ -173,6 +173,10 @@ class ConfigurationClassParser {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
 				if (bd instanceof AnnotatedBeanDefinition) {
+					// 注意，1个为AppConfig配置类是被注册为了AnnotatedBeanDefinition，
+					// 可参见调用链：（1）AnnotationConfigApplicationContext#register(componentClasses);
+					// （2）this.reader.register(componentClasses);
+					// (3)registerBean(componentClass); (4)doRegisterBean(beanClass, null, null, null, null);
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
 				else if (bd instanceof AbstractBeanDefinition && ((AbstractBeanDefinition) bd).hasBeanClass()) {
@@ -630,6 +634,7 @@ class ConfigurationClassParser {
 			Collection<SourceClass> importCandidates, Predicate<String> exclusionFilter,
 			boolean checkForCircularImports) {
 
+		// 如果没有@Import注解，则直接返回，不处理
 		if (importCandidates.isEmpty()) {
 			return;
 		}
@@ -642,7 +647,7 @@ class ConfigurationClassParser {
 			// 推入栈
 			this.importStack.push(configClass);
 			try {
-				// 推入栈
+				// 循环处理 @Import 进来的每一个类
 				for (SourceClass candidate : importCandidates) {
 					// 对import的内容进行分类
 					// 1、import导入实现ImportSelector接口的类
@@ -666,7 +671,7 @@ class ConfigurationClassParser {
 							// 普通的ImportSelector ,执行其selectImports方法,获取需要导入的类的全限定类名数组
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames, exclusionFilter);
-							// 递归调用
+							// 递归调用（有可能@Import进来的类又有@Import注解）
 							processImports(configClass, currentSourceClass, importSourceClasses, exclusionFilter, false);
 						}
 					}
