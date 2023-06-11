@@ -321,7 +321,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// 得到BeanDefinition实例
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
 			// 已经解析过了, 跳过(如果有该标识，就不再处理)
+			// 判断是否处processed理过了，---是否标记配置类（半或全）。等于null，就标注自己需要关心哪些类
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
+				// 这个类已经标注为Spring需要关心的类了
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
@@ -343,7 +345,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// 如果加了@Configuration，那么对应的BeanDefinition为full;
 			// 如果加了@Bean,@Component,@ComponentScan,@Import,@ImportResource这些注解，则为lite。
 			// lite和full均表示这个BeanDefinition对应的类是一个配置类
+
+			// beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) 等于null，就判断自己是否需要关心，并标注
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+				// 第一次进来，遍历的candidateNames默认会有6个，其中5个为Spring内置的，1个为AppConfig配置类，
+				// 通过ConfigurationClassUtils.checkConfigurationClassCandidate的标记，只有AppConfig会成为configCandidates
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
@@ -421,6 +427,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// 实际上经过上一步的parse()后，解析出来的bean已经放入到BeanDefinition中了，但是由于这些bean可能会引入新的bean，
 			// 例如实现了ImportBeanDefinitionRegistrar或者ImportSelector接口的bean，或者bean中存在被@Bean注解的方法
 			// 因此需要执行一次loadBeanDefinition()，这样就会执行ImportBeanDefinitionRegistrar或者ImportSelector接口的方法或者@Bean注释的方法
+
+			// 在这里处理@Bean @ImportResource @ImportRegistrar的具体逻辑
 			this.reader.loadBeanDefinitions(configClasses);
 			// 将configClasses加入到已解析alreadyParsed中
 			alreadyParsed.addAll(configClasses);
