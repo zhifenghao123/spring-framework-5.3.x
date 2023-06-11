@@ -3,6 +3,7 @@ package com.hao.javaConfig8;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import com.hao.javaConfig8.comPack.ComponentVO3;
 
 /**
  * AnnotationConfigApplicationContextMain8 class
@@ -26,5 +27,10 @@ public class AnnotationConfigApplicationContextMain8 {
             }
         }
         System.out.println("--------------------");
+
+        Object componentVO1 = annotationConfigApplicationContext.getBean("componentVO1");
+        ComponentVO3 componentVO3 = annotationConfigApplicationContext.getBean("componentVO3", ComponentVO3.class);
+        System.out.println("componentVO1.equals(componentVO3.getComponentVO1())" + componentVO1.equals(componentVO3.getComponentVO1()));
+
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.hao.javaConfig8.comPack.ComponentVO1;
 import com.hao.javaConfig8.comPack.ComponentVO2;
+import com.hao.javaConfig8.comPack.ComponentVO3;
 import com.hao.javaConfig8.comPack2.Component2;
 import com.hao.javaConfig8.comPack4.comSubPack1.Componenet41;
 
@@ -31,6 +32,13 @@ public class AppConfig {
     @Bean
     public ComponentVO1 componentVO1() {
         return new ComponentVO1();
+    }
+
+    @Bean
+    public ComponentVO3 componentVO3() {
+        ComponentVO3 componentVO3 = new ComponentVO3();
+        componentVO3.setComponentVO1(componentVO1());
+        return componentVO3;
     }
 
     @Component

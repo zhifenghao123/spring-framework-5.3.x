@@ -13,6 +13,6 @@ import com.hao.javaConfig5.component.Product;
  * @date 2023/02/23
  */
 @Configuration
-@Import(MyImportSelector.class)
+@Import({MyImportSelector.class, MyDeferredImportSelector.class})
 public class AppConfig {
 }
