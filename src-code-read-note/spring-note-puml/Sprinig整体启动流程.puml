@@ -1,0 +1,12 @@
+@startuml
+'https://plantuml.com/zh/archimate-diagram'
+
+rectangle XML #lightgreen
+rectangle 注解 #lightgreen
+rectangle 接口规范约束 #red
+
+XML -right-> 接口规范约束
+注解 -right-> 接口规范约束
+
+
+@enduml

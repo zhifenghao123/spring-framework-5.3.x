@@ -4,39 +4,66 @@ start
 :实例化
 (在堆空间中申请空间，对象的属性值一般都是默认值，
 实际就是反射创建对象的过程);
-note right:createBeanInstance反射创建对象
+note right
+<b>createBeanInstance</b>反射创建对象
+end note
 group 初始化
+
+floating note left
+1.BeanPostProcessor可以
+对Bean做扩展实现或者增强
+
+2.可以说AOP是IOC整体流程中
+的一个扩展点
+end note
+
 group 属性赋值（属性填充）
 :自定义属性赋值;
-note right:populateBean set方法完成赋值操作
+note right
+<b>populateBean</b> set方法完成赋值操作
+end note
+
 :容器属性赋值;
-note right:invokeAwareMethods
+note right
+<b>invokeAwareMethods</b>
+====
+此步骤执行完成，对象的创建和属性的赋值都完成了，
+那么此时对象是否可以直接拿来用呢？
+理论上是可以的，但是Spring要考虑扩展性（增强处理）
+end note
 end group
-note right:执行到此步骤，对象的创建和属性的赋值都完成了，\n那么此时对象是否可以直接拿来用呢？理论上是可以的，但是Spring要考虑扩展性
-:调用InstantiationAwareBeanPostProcessor
-的postProcessBeforeInstantiation()方法;
-:实例化;
-:调用InstantiationAwareBeanPostProcessor
-的postProcessAfterInstantiation()方法;
-:调用InstantiationAwareBeanPostProcessor
-的postProcessPropertyValues()方法;
-:设置属性值;
-:调用BeanNameAware的setBeanName()方法;
-:调用BeanFactoryAware的setBeanFactory()方法;
-:调用ApplicationContextAware的setApplicationContext()方法;
-:调用BeanPostProcessor的postProcessBeforeInitialization方法;
-:调用InitializingBean的afterPropertiesSet()方法;
-:通过init-method属性配置的初始化方法;
-:调用BeanPostProcessor的postProcessAfterInitialization()方法;
-if (Bean的类型?) then (singleton)
-    :Spring缓冲池中准备就绪的Bean;
-    ->容器销毁;
-    :调用DisposableBean的destroy()方法;
-    :通过destroy-method属性配置的销毁方法;
-else (prototype)
-    :将准备就绪的Bean交给调用者;
-endif
+
+:执行BeanPostProcessor的前置增强处理;
+note right
+<b>postProcessBeforeInitialization</b>
+eg:AOP(ApplicationContextAwareProcessor
+执行了invokeAwareInterfaces)
+end note
+
+:执行初始化方法;
+note right
+<b>invokeInitMethods</b>
+====
+(1)检测改Bean是否实现了InitializingBean接口，
+若是，则调用afterPropertiesSet方法
+(2)如果配置了init-method初始化方法，
+则执行对应的方法(在invokeCustomInitMethod中)
+end note
+
+
+:执行BeanPostProcessor的后置增强处理;
+note right
+<b>postProcessAfterInitialization</b>
+ eg:AOP(AbstractAutoProxyCreator中最终执行了wrapIfNecessary)
+end note
 end group
+:使用bean;
+:销毁bean;
+note right
+指的是ApplicationContext#close，
+指的是容器关闭的过程中，
+实际中容器不会经常关闭
+end note
 stop
 
 @enduml
