@@ -172,6 +172,7 @@ class ConfigurationClassParser {
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
+				// 扫描注解得到的BeanDefinition
 				if (bd instanceof AnnotatedBeanDefinition) {
 					// 注意，1个为AppConfig配置类是被注册为了AnnotatedBeanDefinition，
 					// 可参见调用链：（1）AnnotationConfigApplicationContext#register(componentClasses);
@@ -179,9 +180,11 @@ class ConfigurationClassParser {
 					// (3)registerBean(componentClass); (4)doRegisterBean(beanClass, null, null, null, null);
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
+				// spring自己定义的一些类
 				else if (bd instanceof AbstractBeanDefinition && ((AbstractBeanDefinition) bd).hasBeanClass()) {
 					parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
 				}
+				// 可能是xml解析
 				else {
 					parse(bd.getBeanClassName(), holder.getBeanName());
 				}
