@@ -119,11 +119,18 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
+		// 对代理对象设置父类
 		enhancer.setSuperclass(configSuperClass);
+		// 对代理对象设置父接口
+		// EnhancedConfiguration 继承了 BeanFactoryAware
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
+		// 添加了两个 MethodInterceptor ,BeanMethodInterceptor和BeanFactoryAwareMethodInterceptor
+		// CGLIB 的增强就是执行 MethodInterceptor类 的 intercept 方法
+		// BeanMethodInterceptor ：对加了@Bean注解的方法进行增强
+		// BeanFactoryAwareMethodInterceptor：对实现了 BeanFactoryAware 接口，调用 setBeanFactory() 方法
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
