@@ -372,11 +372,16 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		// Detect any custom bean name generation strategy supplied through the enclosing application context
 		SingletonBeanRegistry sbr = null;
+		// 当前 BeanFactory 是不是支持单例bean的注册，如果支持则设置一个 BeanNameGenerator
+		// 用来在扫描 @Component 和 @Import 某个Bean时取名字
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
+			// localBeanNameGeneratorSet 默认为 false
 			if (!this.localBeanNameGeneratorSet) {
-				// beanName的生成器，因为后面会扫描出所有加入到spring容器中class类，然后把这些class
-				// 解析成BeanDefinition类，此时需要利用BeanNameGenerator为这些BeanDefinition生成beanName
+				// beanName的生成器，因为后面会扫描出所有加入到spring容器中class类，然后把这些class解析成BeanDefinition类，
+				// 此时需要利用BeanNameGenerator为这些BeanDefinition生成beanName
+				// 程序员可以指定一个beanName生成器 applicationContext.setBeanNameGenerator()，不指定则使用默认的
+				// ConfigurationBeanNameGenerator
 				BeanNameGenerator generator = (BeanNameGenerator) sbr.getSingleton(
 						AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR);
 				if (generator != null) {
@@ -392,6 +397,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// 初始化一个ConfigurationClassParser解析器，解析所有加了@Configuration注解的类
+		// 配置 bean 解析器，解析器里存在 registry，所以在解析的过程中可以往 registry 中添加 BeanDefinition
 		// Parse each @Configuration class
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
