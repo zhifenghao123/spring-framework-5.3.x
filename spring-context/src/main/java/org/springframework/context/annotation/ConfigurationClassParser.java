@@ -301,8 +301,10 @@ class ConfigurationClassParser {
 			ConfigurationClass configClass, SourceClass sourceClass, Predicate<String> filter)
 			throws IOException {
 
-		// 1、首先处理内部类，处理内部类时，最终还是调用doProcessConfigurationClass()方法
-		// 处理@Component注解和@Configuration注解。@Configuration注解上也标注的是@Component，被@Configuration标注的配置类本身也是一个bean组件
+		// 1、如果配置类上有@Component注解，则要获得类中的内部类，判断内部类上是否有 @Component、@ComponentScan、@Import
+        // 、@ImportResource注解， 如果有调用processConfigurationClass
+		// 注意:(1)处理内部类时，最终还是调用doProcessConfigurationClass()方法。
+		// (2)处理@Component注解和@Configuration注解。@Configuration注解上也标注的是@Component，被@Configuration标注的配置类本身也是一个bean组件
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
 			// 处理内部类，类似如下
@@ -321,7 +323,7 @@ class ConfigurationClassParser {
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
-		// 2、处理属性资源文件，加了@PropertySource注解
+		// 2、解析处理@PropertySource注解，该注解的作用可以加载指定的配置文件
 		// Process any @PropertySource annotations
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
@@ -345,14 +347,14 @@ class ConfigurationClassParser {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
 				// 3.2 解析@ComponentScan和@ComponentScans配置的扫描的包所包含的类
-				// 比如 basePackages = com.tiantang.study, 那么在这一步会扫描出这个包及子包下的class，然后将其解析成BeanDefinition
+				// 比如 basePackages = com.howdev.study, 那么在这一步会扫描出这个包及子包下的class，然后将其解析成BeanDefinition
 				// (BeanDefinition可以理解为等价于BeanDefinitionHolder)
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// 遍历扫描到的配置类进行递归解析
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
-				// 3.3 通过上一步扫描包com.tiantang.study下的类，有可能扫描出来的bean中可能也添加了ComponentScan或者ComponentScans注解.
-				//所以这里需要循环遍历一次，进行递归(parse)，继续解析，直到解析出的类上没有ComponentScan和ComponentScans
+				// 3.3 通过上一步扫描包com.howdev.study下的类，有可能扫描出来的bean中可能也添加了ComponentScan或者ComponentScans注解.
+				// 所以这里需要循环遍历一次，进行递归(parse)，继续解析，直到解析出的类上没有ComponentScan和ComponentScans
 				// (这时3.1这一步解析出componentScans为空列表，不会进入到if语句，递归终止)
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
@@ -378,7 +380,9 @@ class ConfigurationClassParser {
 		AnnotationAttributes importResource =
 				AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
 		if (importResource != null) {
+			// xml文件地址
 			String[] resources = importResource.getStringArray("locations");
+			// 得到解析xml文件的解析器
 			Class<? extends BeanDefinitionReader> readerClass = importResource.getClass("reader");
 			// 遍历配置的locations,加入到configClass 中的ImportedResource
 			for (String resource : resources) {
