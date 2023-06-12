@@ -690,7 +690,8 @@ class ConfigurationClassParser {
 						ImportBeanDefinitionRegistrar registrar =
 								ParserStrategyUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class,
 										this.environment, this.resourceLoader, this.registry);
-						// 添加到成员变量
+						// 如果@Import注解中的类实现了ImportBeanDefinitionRegistrar接口，就把该类的实例放入 ConfigurationClass
+						// 类属性importBeanDefinitionRegistrars Map中，后面再执行该实例的 registerBeanDefinitions 方法
 						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
 					}
 					else {
@@ -700,6 +701,7 @@ class ConfigurationClassParser {
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
 						// 3、解析导入的@Configuration class
+						// 如果导入的类就是一个普通的类，将其作为配置类进行解析，调用 processConfigurationClass 方法
 						processConfigurationClass(candidate.asConfigClass(configClass), exclusionFilter);
 					}
 				}
