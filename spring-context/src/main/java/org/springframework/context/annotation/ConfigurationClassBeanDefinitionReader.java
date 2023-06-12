@@ -189,8 +189,10 @@ class ConfigurationClassBeanDefinitionReader {
 	 */
 	@SuppressWarnings("deprecation")  // for RequiredAnnotationBeanPostProcessor.SKIP_REQUIRED_CHECK_ATTRIBUTE
 	private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
+		// @Bean标注方法的来源
 		ConfigurationClass configClass = beanMethod.getConfigurationClass();
 		MethodMetadata metadata = beanMethod.getMetadata();
+		// 方法名称
 		String methodName = metadata.getMethodName();
 
 		// Do we need to mark the bean as skipped by its condition?
@@ -202,19 +204,24 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		// 获得 @Bean 的信息
 		AnnotationAttributes bean = AnnotationConfigUtils.attributesFor(metadata, Bean.class);
 		Assert.state(bean != null, "No @Bean annotation attributes");
 
 		// Consider name and any aliases
+		//获得所有别名
 		List<String> names = new ArrayList<>(Arrays.asList(bean.getStringArray("name")));
+		//如果指定了别名，则第一个别名作为 beanName，负责使用 方法名称作为 beanName
 		String beanName = (!names.isEmpty() ? names.remove(0) : methodName);
 
 		// Register aliases even when overridden
 		for (String alias : names) {
+			// 注册别名
 			this.registry.registerAlias(beanName, alias);
 		}
 
 		// Has this effectively been overridden before (e.g. via XML)?
+		// 判断 beanName 是否已经被加载过了
 		if (isOverriddenByExistingDefinition(beanMethod, beanName)) {
 			if (beanName.equals(beanMethod.getConfigurationClass().getBeanName())) {
 				throw new BeanDefinitionStoreException(beanMethod.getConfigurationClass().getResource().getDescription(),
@@ -224,22 +231,28 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		// 构建 BeanDefinition
 		ConfigurationClassBeanDefinition beanDef = new ConfigurationClassBeanDefinition(configClass, metadata, beanName);
 		beanDef.setSource(this.sourceExtractor.extractSource(metadata, configClass.getResource()));
 
+		// 被@Bean标注的方法是静态，则使用静态工厂注入
 		if (metadata.isStatic()) {
 			// static @Bean method
 			if (configClass.getMetadata() instanceof StandardAnnotationMetadata) {
 				beanDef.setBeanClass(((StandardAnnotationMetadata) configClass.getMetadata()).getIntrospectedClass());
 			}
 			else {
+				// 指定工厂类路径
 				beanDef.setBeanClassName(configClass.getMetadata().getClassName());
 			}
+			// 指定工厂方法
 			beanDef.setUniqueFactoryMethodName(methodName);
 		}
 		else {
 			// instance @Bean method
+			// 实例工厂注入，factory-bean 配置实例化工厂类的名称
 			beanDef.setFactoryBeanName(configClass.getBeanName());
+			// 指定工厂方法
 			beanDef.setUniqueFactoryMethodName(methodName);
 		}
 
