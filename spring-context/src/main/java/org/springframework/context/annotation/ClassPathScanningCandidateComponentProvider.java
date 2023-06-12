@@ -314,10 +314,12 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return a corresponding Set of autodetected bean definitions
 	 */
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
+		// Spring提供了一种支持更快速扫描的机制，就是编译时直接创建一个静态的，ASM技术
 		if (this.componentsIndex != null && indexSupportsIncludeFilters()) {
 			return addCandidateComponentsFromIndex(this.componentsIndex, basePackage);
 		}
 		else {
+			// 扫描@Component，扫描 basePackage 下的所有类，看是否有@Component注解
 			return scanCandidateComponents(basePackage);
 		}
 	}
@@ -419,10 +421,12 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
+		// 扫描类，得到的BeanDefinition
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
 		try {
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			//路径下所有的类
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -431,10 +435,14 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 					logger.trace("Scanning " + resource);
 				}
 				try {
+					// MetadataReader 包含了对应 class 的元信息以及注解元信息。
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
+					// 判断一个类是不是Component
 					if (isCandidateComponent(metadataReader)) {
+						// 通过扫描@Component得到的BeanDefinition类型为ScannedGenericBeanDefinition
 						ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 						sbd.setSource(resource);
+						// 再进一步验证
 						if (isCandidateComponent(sbd)) {
 							if (debugEnabled) {
 								logger.debug("Identified candidate component class: " + resource);
@@ -490,16 +498,19 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return whether the class qualifies as a candidate component
 	 */
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+		// 如果读取的类的注解在排除注解过滤规则中，返回false
 		for (TypeFilter tf : this.excludeFilters) {
 			if (tf.match(metadataReader, getMetadataReaderFactory())) {
 				return false;
 			}
 		}
+		// 如果读取的类的注解在包含的注解的过滤规则中，则返回ture
 		for (TypeFilter tf : this.includeFilters) {
 			if (tf.match(metadataReader, getMetadataReaderFactory())) {
 				return isConditionMatch(metadataReader);
 			}
 		}
+		// 如果读取的类的注解既不在排除规则，也不在包含规则中，则返回false
 		return false;
 	}
 

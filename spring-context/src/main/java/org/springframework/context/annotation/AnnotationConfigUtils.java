@@ -296,6 +296,15 @@ public abstract class AnnotationConfigUtils {
 		}
 	}
 
+	// Scope注解中的ProxyMode属性有四个取值
+	// 1.DEFAULT:默认值，默认情况下取no
+	// 2.NO:不开启代理
+	// 3.INTERFACES:使用jdk动态代理
+	// 4.TARGET_CLASS:使用cglib代理
+	// 假如有一个单例beanA，其中有一个属性B，B的Scope是session，此时，容器在启动时创建A的过程中需要注入B属性，
+	// 但是B的scope是session,这种情况下是注入不了的，是会报错的
+	// 但是如果将B的Scope的ProxyMode属性配置为INTERFACES/TARGET_CLASS时，那么B就会生成一个ScopedProxyFactoryBean类型的BeanDefinitionHolder
+	// 在A注入B时，就会注入一个ScopedProxyFactoryBean类型的Bean
 	static BeanDefinitionHolder applyScopedProxyMode(
 			ScopeMetadata metadata, BeanDefinitionHolder definition, BeanDefinitionRegistry registry) {
 
@@ -303,7 +312,9 @@ public abstract class AnnotationConfigUtils {
 		if (scopedProxyMode.equals(ScopedProxyMode.NO)) {
 			return definition;
 		}
+		// 是否使用cglib
 		boolean proxyTargetClass = scopedProxyMode.equals(ScopedProxyMode.TARGET_CLASS);
+		// 创建ScopedProxyFactoryBean类型的BeanDefinitionHolder
 		return ScopedProxyCreator.createScopedProxy(definition, registry, proxyTargetClass);
 	}
 
