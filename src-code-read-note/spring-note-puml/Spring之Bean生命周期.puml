@@ -36,7 +36,7 @@ end group
 :执行BeanPostProcessor的前置增强处理;
 note right
 <b>postProcessBeforeInitialization</b>
-eg:AOP(ApplicationContextAwareProcessor
+eg:设置Environment等容器属性(ApplicationContextAwareProcessor
 执行了invokeAwareInterfaces)
 end note
 
