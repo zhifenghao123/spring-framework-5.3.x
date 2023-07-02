@@ -67,3 +67,6 @@ include 'spring-hao-test:spring-hao-test-webmvc2'
 include 'spring-hao-test:hao-spring-data-convert'
 include 'spring-hao-test:hao-spring-bean-lifecycle'
 include 'spring-hao-test:hao-spring-mybatis'
+include 'spring-hao-test:hao-spring-boot-project:hao-spring-boot'
+include 'spring-hao-test:hao-spring-boot-project:hao-spring-boot-app'
+

@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+group 'org.springframework'
+version '5.3.24-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //  api(project(":spring-hao-test:hao-spring-boot-project:hao-spring-boot"))
+    api(project(":spring-hao-test:hao-spring-boot-project:hao-spring-boot")){
+        exclude(group: 'org.apache.tomcat.embed', module: 'tomcat-embed-core')
+    }
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.50.v20221201'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.50.v20221201'
+
+
+
+    api(project(":spring-webmvc"))
+
+
+
+}

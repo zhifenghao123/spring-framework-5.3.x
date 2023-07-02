@@ -1,0 +1,35 @@
+plugins {
+    id 'java-library'
+}
+java {
+    registerFeature('jettyServer') {
+        usingSourceSet(sourceSets.main)
+        capability('org.eclipse.jetty', 'jetty-server', '9.4.50.v20221201')
+        capability('org.eclipse.jetty', 'jetty-servlet', '9.4.50.v20221201')
+    }
+}
+
+group 'org.springframework'
+version '5.3.24-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api(project(":spring-webmvc"))
+    // https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core
+    implementation group: 'org.apache.tomcat.embed', name: 'tomcat-embed-core', version: '8.5.90'
+    // https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-jasper
+    //implementation group: 'org.apache.tomcat.embed', name: 'tomcat-embed-jasper', version: '8.5.90'
+    // https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-el
+    //implementation group: 'org.apache.tomcat.embed', name: 'tomcat-embed-el', version: '8.5.90'
+
+
+    // https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server
+    //implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.50.v20221201'
+    jettyServerImplementation("org.eclipse.jetty:jetty-server:9.4.50.v20221201")
+    jettyServerImplementation("org.eclipse.jetty:jetty-servlet:9.4.50.v20221201")
+    // 关于解决Gradle中Optional的解决方案（feature）可参考： https://blog.gradle.org/optional-dependencies
+
+}
