@@ -88,8 +88,24 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 
 	@Override
 	protected List<Advisor> findCandidateAdvisors() {
+		/**
+		 * 1）当使用注解方式配置Aop的时候，并不是丢弃了对xml配置的支持，在这里调用父类方法加载配置文件中的Aop声明，获取所有Advisor。
+		 * 【步骤1】首先，尝试从缓存（cachedAdvisorBeanNames）中获得Advisor类型的bean名称列表。
+		 * 【步骤2】如果没有获得到，则试图去IOC容器中获得所有Advisor类型的bean名称列表。
+		 * 【步骤3】如果都没有获得Advisor类型的bean名称列表，则直接返回空集合。
+		 * 【步骤4】如果不为空，则通过beanFactory.getBean(name, Advisor.class)来获得Advisor实例集合，并进行返回。
+		 */
 		// Add all the Spring advisors found according to superclass rules.
 		List<Advisor> advisors = super.findCandidateAdvisors();
+		/**
+		 * 2）在当前bean工厂中查找带有aspectj注解的Advisor实例bean，并返回Advisors列表
+		 * 【步骤1】获得Aspect的beanName列表；
+		 * 【步骤2】通过beanName来获得MetadataAwareAspectInstanceFactory实例，具体如下所示：如果per-clauses(aspect实例化模式)
+		 * 类型等于SINGLETON，则创建BeanFactoryAspectInstanceFactory类型的factory；否则，则创建PrototypeAspectInstanceFactory类型的factory；
+		 * 【步骤3】通过调用advisorFactory.getAdvisors(factory)来获得Advisor列表；
+		 * 【步骤4】维护advisorsCache缓存或aspectFactoryCache缓存；如果beanName是单例的，则将beanName和Advisor列表维护到advisorsCache
+		 * 缓存中；否则，将beanName和factory维护到aspectFactoryCache缓存中；
+		 */
 		// Build Advisors for all AspectJ aspects in the bean factory.
 		if (this.aspectJAdvisorsBuilder != null) {
 			advisors.addAll(this.aspectJAdvisorsBuilder.buildAspectJAdvisors());

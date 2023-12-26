@@ -223,6 +223,7 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
+		// 如果Pointcut不能应用于targetClass类上，则直接返回false
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
@@ -244,6 +245,7 @@ public abstract class AopUtils {
 		}
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
+		// 遍历所有相关类的所有方法，只要有与targetClass匹配的方法，则返回ture
 		for (Class<?> clazz : classes) {
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
@@ -286,6 +288,8 @@ public abstract class AopUtils {
 		}
 		else if (advisor instanceof PointcutAdvisor) {
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
+			// 在canApply(...)方法中，主要是逻辑是获得 targetClass类（非代理类） 及 targetClass类的相关所有接口 中的所有方法去匹配，
+			// 是否满足对targetClass类的增强，如果找到了，则返回false；如果找不到，则返回true；
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
 		else {
@@ -308,6 +312,11 @@ public abstract class AopUtils {
 		}
 		List<Advisor> eligibleAdvisors = new ArrayList<>();
 		for (Advisor candidate : candidateAdvisors) {
+			/**
+			 * 处理引介增强IntroductionAdvisor
+			 * 什么是引介增强呢？ 引介增强是一种特殊的增强，其它的增强是方法级别的增强，即只能在方法前或方法后添加增强。
+			 * 而引介增强则不是添加到方法上的增强， 而是添加到类级别的增强，即：可以为目标类动态实现某个接口，或者动态添加某些方法。
+			 */
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
@@ -318,6 +327,12 @@ public abstract class AopUtils {
 				// already processed
 				continue;
 			}
+			/**
+			 * 处理普通增强
+			 * canApply(...)方法内部，依然根据引介增强和普通增强两种增强形式分别进行的判断，
+			 * 其中，如果是引介增强的话，则判断该增强是否可以应用在targetClass上，如果可以则返回true，否则返回false。
+			 * 如果是普通增强，则需要再调用canApply(...)方法继续进行逻辑判断
+			 */
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

@@ -93,7 +93,9 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+		// 通过调用findCandidateAdvisors(...)方法，获取所有的增强器；
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		// 通过调用findAdvisorsThatCanApply(...)方法，寻找所有增强中匹配适用于bean的增强器并进行应用；
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {

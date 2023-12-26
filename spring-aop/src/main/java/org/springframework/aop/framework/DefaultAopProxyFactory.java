@@ -54,6 +54,13 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 
 	@Override
 	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+		/**
+		 * isOptimize() ：用来控制通过CGLIB创建的代理是否使用激进的优化策略。除非完全了解AOP代理如何处理优化，否则不推荐用户使用这个设置。
+		 * 目前这个属性仅用于CGLIB代理，对于JDK动态代理（默认代理）无效。
+		 * isProxyTargetClass() ：这个属性为true时，目标类本身被代理而不是目标类的接口。如果这个属性值被设为true, CGLIB代理将被创建，设置方式为：
+		 * <aop:aspectj-autoproxy-proxy-target-class＝"true"/> 。
+		 * hasNoUserSuppliedProxyInterfaces(config) ：是否存在代理接口。
+		 */
 		if (!NativeDetector.inNativeImage() &&
 				(config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config))) {
 			Class<?> targetClass = config.getTargetClass();
@@ -61,12 +68,15 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 				throw new AopConfigException("TargetSource cannot determine target class: " +
 						"Either an interface or a target is required for proxy creation.");
 			}
+			// 如果是接口或者是代理类，则使用JDK动态代理
 			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass) || ClassUtils.isLambdaClass(targetClass)) {
 				return new JdkDynamicAopProxy(config);
 			}
+			// 否则，使用CGlib代理
 			return new ObjenesisCglibAopProxy(config);
 		}
 		else {
+			// 使用JDK动态代理
 			return new JdkDynamicAopProxy(config);
 		}
 	}

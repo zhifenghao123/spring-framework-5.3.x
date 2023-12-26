@@ -65,19 +65,25 @@ public class BeanFactoryAdvisorRetrievalHelper {
 	 * @see #isEligibleBean
 	 */
 	public List<Advisor> findAdvisorBeans() {
+		//【步骤1】获得所有被缓存的Advisor的bean名称列表
 		// Determine list of advisor bean names, if not cached already.
 		String[] advisorNames = this.cachedAdvisorBeanNames;
+		//【步骤2】如果缓存中没有，那么我们就从BeanFactoryUtils中获得Advisor的bean名称列表，然后作为已缓存的bean名称列表
 		if (advisorNames == null) {
+			//【官方注释】这里不要初始化FactoryBeans:我们需要保留所有未初始化的常规bean，以便让自动代理创建器应用于它们!
+			// 返回容器中所有Advisor类型的bean名称列表
 			// Do not initialize FactoryBeans here: We need to leave all regular beans
 			// uninitialized to let the auto-proxy creator apply to them!
 			advisorNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 					this.beanFactory, Advisor.class, true, false);
 			this.cachedAdvisorBeanNames = advisorNames;
 		}
+		//【步骤3】如果缓存也没有并且从从BeanFactoryUtils中也没获得到，则直接返回空集合
 		if (advisorNames.length == 0) {
 			return new ArrayList<>();
 		}
 
+		//【步骤4】从IOC容器中获得Advisor对象实例集合，并返回
 		List<Advisor> advisors = new ArrayList<>();
 		for (String name : advisorNames) {
 			if (isEligibleBean(name)) {
