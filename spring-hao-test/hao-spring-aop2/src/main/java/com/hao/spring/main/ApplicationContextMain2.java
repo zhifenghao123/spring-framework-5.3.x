@@ -3,8 +3,6 @@ package com.hao.spring.main;
 import com.hao.spring.aspect2.IPay;
 import com.hao.spring.aspect2.IPayPlugin;
 import com.hao.spring.config.AppConfig;
-import com.hao.spring.service.AccountService;
-import com.hao.spring.service.UserService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
